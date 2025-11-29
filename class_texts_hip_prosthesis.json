@@ -1,0 +1,11 @@
+{
+  "Acetabular Loosening": "The acetabular cup shows signs of loosening with radiolucent lines or migration between the cup and bone interface.",
+  "Dislocation": "The hip prosthesis has dislocated with the femoral head displaced from the acetabular cup.",
+  "Fracture": "There is a fracture visible in the bone structure around the hip prosthesis.",
+  "Good Place": "The hip prosthesis is in good position with proper alignment and no signs of loosening or migration.",
+  "Native Hip": "This is a native hip joint without any prosthetic components, showing normal anatomy.",
+  "Spacer": "A temporary spacer is present in the hip joint, typically used during staged revision surgery.",
+  "Stem Loosening": "The femoral stem shows signs of loosening with radiolucent lines or migration between the stem and bone interface.",
+  "Infection": "There is evidence of infection in the hip prosthesis area.",
+  "Wear": "There is evidence of wear in the hip prosthesis, typically seen as asymmetric joint space narrowing or particle debris."
+}

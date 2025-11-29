@@ -1,0 +1,57 @@
+{
+  "data_dir": "single_label_data",
+  "num_classes": 9,
+  "total_images": 1617,
+  "class_stats": {
+    "Acetabular Loosening": {
+      "total_files": 229,
+      "valid_images": 229,
+      "invalid_images": 0
+    },
+    "Dislocation": {
+      "total_files": 46,
+      "valid_images": 46,
+      "invalid_images": 0
+    },
+    "Fracture": {
+      "total_files": 113,
+      "valid_images": 113,
+      "invalid_images": 0
+    },
+    "Good Place": {
+      "total_files": 253,
+      "valid_images": 253,
+      "invalid_images": 0
+    },
+    "Infection": {
+      "total_files": 81,
+      "valid_images": 81,
+      "invalid_images": 0
+    },
+    "Native Hip": {
+      "total_files": 751,
+      "valid_images": 751,
+      "invalid_images": 0
+    },
+    "Spacer": {
+      "total_files": 51,
+      "valid_images": 51,
+      "invalid_images": 0
+    },
+    "Stem Loosening": {
+      "total_files": 69,
+      "valid_images": 69,
+      "invalid_images": 0
+    },
+    "Wear": {
+      "total_files": 24,
+      "valid_images": 24,
+      "invalid_images": 0
+    }
+  },
+  "min_count": 24,
+  "max_count": 751,
+  "avg_count": 179.66666666666666,
+  "imbalance_ratio": 31.291666666666668,
+  "invalid_images": 0
+}

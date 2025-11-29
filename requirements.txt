@@ -1,0 +1,22 @@
+# PyTorch核心库
+torch>=2.0.0
+torchvision>=0.15.0
+
+# 图像处理
+Pillow>=9.0.0
+
+# 数值计算
+numpy>=1.21.0
+
+# 进度条
+tqdm>=4.64.0
+
+# 模型库（用于MogaNet等高级模型）
+timm>=0.9.0
+
+# Hugging Face Transformers（用于BERT等文本编码器）
+transformers>=4.20.0
+
+# 机器学习工具
+scikit-learn>=1.0.0
+

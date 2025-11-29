@@ -1,0 +1,28 @@
+[
+  {
+    "image_encoder_name": "resnet18",
+    "text_encoder_name": "clip:ViT-B/32",
+    "embed_dim": 512,
+    "batch_size": 32,
+    "epochs": 100,
+    "learning_rate": 1e-4,
+    "weight_decay": 0.01,
+    "temperature": 0.07,
+    "img_size": 224,
+    "augmentation": "standard",
+    "num_workers": 4,
+    "use_amp": true,
+    "gpu_id": 0,
+    "save_best": true,
+    "use_cv": true,
+    "n_splits": 5,
+    "early_stopping_patience": null,
+    "early_stopping_min_delta": 0.001,
+    "early_stopping_monitor": "val_loss",
+    "class_texts_file": "class_texts_hip_prosthesis.json",
+    "use_weighted_sampling": true,
+    "weight_method": "inverse_freq",
+    "weight_smooth_factor": 4.0
+  }
+]
+
