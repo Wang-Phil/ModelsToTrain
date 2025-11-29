@@ -31,7 +31,7 @@ class SpatialAttention(nn.Module):
         super(SpatialAttention, self).__init__()
         padding = 3 if kernel_size == 7 else 1
         self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        self.bn = nn.GroupNorm(1, 1)
+        self.bn = nn.BatchNorm2d(1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -50,7 +50,7 @@ class Block(nn.Module):
         self.f2 = ConvBN(dim, hidden, 1, bn=False)
         self.g = ConvBN(hidden, dim, 1, bn=True)
         self.dwconv2 = ConvBN(dim, dim, 7, 1, 3, g=dim, bn=False)
-        self.act = nn.GELU()
+        self.act = nn.RelU()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # self.with_attn = with_attn
         self.norm = nn.BatchNorm2d(dim)
@@ -86,7 +86,7 @@ class StarNet_SA(nn.Module):
         self.in_channel = 32
         
         # stem layer
-        self.stem = nn.Sequential(ConvBN(3, self.in_channel, k=3, s=2, p=1), nn.GELU())
+        self.stem = nn.Sequential(ConvBN(3, self.in_channel, k=3, s=2, p=1), nn.RelU())
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth
         
         # build stages
