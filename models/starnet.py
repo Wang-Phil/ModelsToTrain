@@ -291,7 +291,7 @@ def starnet_s1(pretrained=False, **kwargs):
 
 @register_model
 def starnet_s2(pretrained=False, **kwargs):
-    model = StarNet(32, [1, 2, 6, 2], **kwargs)
+    model = StarNet(24, [2, 2, 8, 3],use_attn=1, **kwargs)
     if pretrained:
         url = model_urls['starnet_s2']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
@@ -301,7 +301,7 @@ def starnet_s2(pretrained=False, **kwargs):
 
 @register_model
 def starnet_s3(pretrained=False, **kwargs):
-    model = StarNet(32, [2, 2, 8, 4], **kwargs)
+    model = StarNet(24, [2, 2, 8, 3],use_attn=2, **kwargs)
     if pretrained:
         url = model_urls['starnet_s3']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
@@ -311,7 +311,7 @@ def starnet_s3(pretrained=False, **kwargs):
 
 @register_model
 def starnet_s4(pretrained=False, **kwargs):
-    model = StarNet(32, [3, 3, 12, 5], **kwargs)
+    model = StarNet(24, [2, 2, 8, 3],use_attn=3, **kwargs)
     if pretrained:
         url = model_urls['starnet_s4']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")

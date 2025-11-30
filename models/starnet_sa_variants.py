@@ -233,7 +233,7 @@ class CrossStarBlock(nn.Module):
     实现了 Y = Concat((x_{3A} * x_{7B}), (x_{7A} * x_{3B}))
     交叉星乘：局部细节调制全局语境，全局语境校正局部细节
     """
-    def __init__(self, dim, mlp_ratio=3, drop_path=0.):
+    def __init__(self, dim, mlp_ratio=3, drop_path=0.,with_attn=False):
         super().__init__()
         
         # 保持原有的输入处理 (7x7 Depthwise Conv)
@@ -258,6 +258,10 @@ class CrossStarBlock(nn.Module):
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
+        # 为每个分支创建独立的 GRN（维度为 self.mid_dim）
+        self.grn_y12 = GRN(dim=self.mid_dim)  # 用于 y12 分支
+        self.grn_y21 = GRN(dim=self.mid_dim)  # 用于 y21 分支
+
     def forward(self, x):
         input = x
         x = self.dwconv(x)
@@ -269,13 +273,15 @@ class CrossStarBlock(nn.Module):
         # 2. 交叉星乘 (Cross-Star Operation) - D (基线)
         # 乘法 1: Local (3A) 调制 Context (7B) -> 强调局部细节在全局语境中的作用
         y12 = self.act(x_3A) * x_7B 
+        y12 = self.grn_y12(y12)
         
         # 乘法 2: Context (7A) 调制 Local (3B) -> 强调全局语境对局部细节的校正
         y21 = self.act(x_7A) * x_3B 
+        y21 = self.grn_y21(y21)
         
         # 3. Concatenate (Inception Style)
         x_out = torch.cat((y12, y21), dim=1) # 沿着通道维度拼接
-        
+
         # 4. 投影回输入维度
         x_out = self.dwconv2(self.g(x_out))
         x_out = input + self.drop_path(x_out)
@@ -304,15 +310,15 @@ class Block(nn.Module):
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # 3. 空间注意力模块（已注释）
-        self.with_attn = with_attn
-        self.sa = SpatialAttention(kernel_size=7)
+        # self.with_attn = with_attn
+        # self.sa = SpatialAttention(kernel_size=7)
         mid_dim = mlp_ratio * dim
         self.grn = GRN(dim=mid_dim)
 
     def forward(self, x):
         input = x
-        if self.with_attn:
-            x = self.sa(x)
+        # if self.with_attn:
+        #     x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
@@ -362,8 +368,14 @@ class StarNet_SA(nn.Module):
                     use_attn_here = False
             else:
                 use_attn_here = False
+            
+            if i_layer < 2:
+                BlockType = Block
+            else:
+                BlockType = CrossStarBlock
+
             blocks = [
-                Block(self.in_channel, mlp_ratio, dpr[cur + i], with_attn=use_attn_here) 
+                BlockType(self.in_channel, mlp_ratio, dpr[cur + i], with_attn=use_attn_here) 
                 for i in range(depths[i_layer])
             ]
             # blocks = [Block(self.in_channel, mlp_ratio, dpr[cur + i]) for i in range(depths[i_layer])]
