@@ -31,7 +31,7 @@ class SpatialAttention(nn.Module):
         super(SpatialAttention, self).__init__()
         padding = 3 if kernel_size == 7 else 1
         self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        # self.bn = nn.BatchNorm2d(1)
+        self.bn = nn.GroupNorm(1, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -53,7 +53,7 @@ class Block(nn.Module):
         self.act = nn.GELU()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # self.with_attn = with_attn
-        self.norm = nn.BatchNorm2d(dim)
+        # self.norm = nn.BatchNorm2d(dim)
         self.sa = SpatialAttention(kernel_size=7)
 
     def forward(self, x):
@@ -64,7 +64,7 @@ class Block(nn.Module):
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
         x = self.dwconv2(self.g(x))
-        x = self.norm(x)    # 添加归一化层 可能这个比较重要
+        # x = self.norm(x)    # 添加归一化层 可能这个比较重要
         return input + self.drop_path(x)
 
 
