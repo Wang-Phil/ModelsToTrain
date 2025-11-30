@@ -43,8 +43,7 @@ from models.starnet_dual_pyramid_rcf import starnet_dual_pyramid_rcf
 from models.starnet_s1_concat import starnet_s1_cross_star, starnet_s1_cross_star_add, starnet_s1_cross_star_samescale
 from models.starnet_s1_artifact import starnet_artifact_s1
 from models.starnet_GRN import starnet_s1_GRN 
-from models.starnet_gate import starnet_gated_s1
-from models.starnet_final_model import starnet_s1_final, starnet_s2_final, starnet_s3_final
+from models.starnet_final_model import starnet_s1_final
 from models.starnet_sa_variants import starnet_sa_s1, starnet_sa_s2, starnet_sa_s3, starnet_sa_s4
 from models.starnet_crosswithgln import starnet_s1_cross_with_gln, starnet_s2_cross_with_gln
 from models.starnet_cfs import starnet_cf_s3

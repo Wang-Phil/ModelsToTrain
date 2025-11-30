@@ -12,10 +12,10 @@ set -e  # 遇到错误立即退出
 DATA_DIR="single_label_data"
 
 # 输出基础目录
-OUTPUT_BASE_DIR="checkpoints/final_starnet_models/final_model"
+OUTPUT_BASE_DIR="checkpoints/final_starnet_models/cross_attention"
 
 # GPU列表（用空格分隔，例如: "0 1 2 3"）
-GPUS=(0 1 2 6 7 8)
+GPUS=(2 6 7 8)
 
 # PLD setting for long tail 
 #===============================
@@ -46,7 +46,7 @@ MODELS=(
     # "starnet_vit_hybrid_s"
     # "starnet_vit_hybrid_t"
     # "mobilenetv3_small"
-    "starnet_s1"  
+    # "starnet_s1"  
     # "starnet_s2"
     # "starnet_s3"
     # "resnet18"
@@ -77,8 +77,8 @@ MODELS=(
     # "starnet_s1_dl"
     # "starnet_s1_lora"
 
-    # 验证gln+空间注意力是否比空间注意力效果好
-    # "starnet_s1_final"
+    # 验证cross attention与空间注意力融合效果
+    "starnet_s1_final"
     # "starnet_s2_final"
     # "starnet_s3_final"
 
@@ -140,7 +140,7 @@ VAL_RATIO=0.4  # 验证集比例（仅在USE_SIMPLE_SPLIT=true时使用）
 USE_PRETRAINED=false
 
 # 日志目录
-LOG_DIR="logs/final_starnet_models/final_model"
+LOG_DIR="logs/final_starnet_models/cross_attention"
 mkdir -p "$LOG_DIR"
 
 # ============================================

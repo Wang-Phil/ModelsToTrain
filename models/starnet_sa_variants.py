@@ -194,6 +194,93 @@ class SpatialAttention(nn.Module):
         return x * scale
 # ==========================================
 
+class GRN(nn.Module):
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        
+        # gamma (γ) 和 beta (β) 是通道维度的可学习参数
+        # 初始化为 1 和 0，形状为 (1, C, 1, 1)，便于广播
+        self.gamma = nn.Parameter(torch.zeros(1, dim, 1, 1))
+        self.beta = nn.Parameter(torch.zeros(1, dim, 1, 1))
+        self.gamma.data.fill_(1.0) # γ 初始化为 1
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # 1. 计算响应范数（Response Normalization）
+        # across spatial dimensions (H, W)
+        
+        # 计算 x^2 在 H, W 维度上的均值
+        # 结果 shape: (B, C, 1, 1)
+        Gx = x.pow(2).mean(dim=[2, 3], keepdim=True)
+        
+        # 开根号得到 L2 范数（Response Norm）
+        # R_norm = sqrt(Gx) + epsilon
+        Rx = torch.sqrt(Gx + self.eps)
+
+        # 2. 归一化和竞争增强
+        # Response = X / R_norm
+        NormX = x / Rx
+        
+        # 3. 最终输出（根据用户提供的公式）
+        # Output = gamma * NormX + beta + X
+        out = self.gamma * NormX + self.beta + x
+        
+        return out
+
+class CrossStarBlock(nn.Module):
+    """
+    [D - 基线] Inception-style Cross-Star Block
+    实现了 Y = Concat((x_{3A} * x_{7B}), (x_{7A} * x_{3B}))
+    交叉星乘：局部细节调制全局语境，全局语境校正局部细节
+    """
+    def __init__(self, dim, mlp_ratio=3, drop_path=0.):
+        super().__init__()
+        
+        # 保持原有的输入处理 (7x7 Depthwise Conv)
+        self.dwconv = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=True)
+        
+        # 定义中间维度。总扩展维度是 dim * mlp_ratio，交叉乘积需要平分通道
+        self.mid_dim = (dim * mlp_ratio) // 2
+        
+        # --- Multi-Scale Branches for Cross-Star Operation ---
+        
+        # Branch 1 (Local): 3x3 Convs (捕捉局部细节)
+        self.f3_A = ConvBN(dim, self.mid_dim, 3, 1, 1, with_bn=False) # Conv_{3x3} A
+        self.f3_B = ConvBN(dim, self.mid_dim, 3, 1, 1, with_bn=False) # Conv_{3x3} B
+        
+        # Branch 2 (Context): 7x7 Convs (捕捉全局语境和纹理)
+        self.f7_A = ConvBN(dim, self.mid_dim, 7, 1, 3, with_bn=False) # Conv_{7x7} A
+        self.f7_B = ConvBN(dim, self.mid_dim, 7, 1, 3, with_bn=False) # Conv_{7x7} B
+        
+        # 融合与输出
+        self.g = ConvBN(dim * mlp_ratio, dim, 1, with_bn=True) # 融合后的总通道是 mid_dim * 2
+        self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
+        self.act = nn.ReLU6()
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+    def forward(self, x):
+        input = x
+        x = self.dwconv(x)
+        
+        # 1. 计算四个子分支的特征
+        x_3A, x_3B = self.f3_A(x), self.f3_B(x)
+        x_7A, x_7B = self.f7_A(x), self.f7_B(x)
+        
+        # 2. 交叉星乘 (Cross-Star Operation) - D (基线)
+        # 乘法 1: Local (3A) 调制 Context (7B) -> 强调局部细节在全局语境中的作用
+        y12 = self.act(x_3A) * x_7B 
+        
+        # 乘法 2: Context (7A) 调制 Local (3B) -> 强调全局语境对局部细节的校正
+        y21 = self.act(x_7A) * x_3B 
+        
+        # 3. Concatenate (Inception Style)
+        x_out = torch.cat((y12, y21), dim=1) # 沿着通道维度拼接
+        
+        # 4. 投影回输入维度
+        x_out = self.dwconv2(self.g(x_out))
+        x_out = input + self.drop_path(x_out)
+        return x_out
+
 
 
 class ConvBN(torch.nn.Sequential):
@@ -219,6 +306,8 @@ class Block(nn.Module):
         # 3. 空间注意力模块（已注释）
         self.with_attn = with_attn
         self.sa = SpatialAttention(kernel_size=7)
+        mid_dim = mlp_ratio * dim
+        self.grn = GRN(dim=mid_dim)
 
     def forward(self, x):
         input = x
@@ -227,13 +316,13 @@ class Block(nn.Module):
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
+        x = self.grn(x)
         x = self.dwconv2(self.g(x))
 
         # [修改] 在 DropPath 和残差连接之前应用注意力（已注释）
         # 这让网络在把特征加回主干之前，先"提炼"一次特征
         # [修正] 只有开启开关才进行注意力计算
         
-
         x = input + self.drop_path(x)
         return x
 

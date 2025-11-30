@@ -281,7 +281,7 @@ class StarNet(nn.Module):
 
 @register_model
 def starnet_s1(pretrained=False, **kwargs):
-    model = StarNet(24, [2, 2, 8, 3], **kwargs)
+    model = StarNet(24, [2, 2, 8, 3],use_attn=0, **kwargs)
     if pretrained:
         url = model_urls['starnet_s1']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
