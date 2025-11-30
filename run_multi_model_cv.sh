@@ -12,10 +12,10 @@ set -e  # 遇到错误立即退出
 DATA_DIR="single_label_data"
 
 # 输出基础目录
-OUTPUT_BASE_DIR="checkpoints/final_starnet_models/sa_variants"
+OUTPUT_BASE_DIR="checkpoints/final_starnet_models/final_model"
 
 # GPU列表（用空格分隔，例如: "0 1 2 3"）
-GPUS=(1 2 6 7 8)
+GPUS=(0 1 2 6 7 8)
 
 # PLD setting for long tail 
 #===============================
@@ -46,7 +46,7 @@ MODELS=(
     # "starnet_vit_hybrid_s"
     # "starnet_vit_hybrid_t"
     # "mobilenetv3_small"
-    # "starnet_s1"  
+    "starnet_s1"  
     # "starnet_s2"
     # "starnet_s3"
     # "resnet18"
@@ -83,7 +83,7 @@ MODELS=(
     # "starnet_s3_final"
 
     # 空间注意力消融实验 (Spatial Attention Variants)
-    "starnet_sa_s1"  # 所有stage都加空间注意力 (stage 0,1,2,3)
+    # "starnet_sa_s1"  # 所有stage都加空间注意力 (stage 0,1,2,3)
     # "starnet_sa_s2"  # 第一个stage不加注意力 (stage 1,2,3加注意力)
     # "starnet_sa_s3"  # 前两个stage不加注意力 (stage 2,3加注意力)
     # "starnet_sa_s4"  # 前三个stage不加注意力 (只有stage 3加注意力)
@@ -113,7 +113,7 @@ WEIGHT_DECAY=0.001
 N_SPLITS=5
 SEED=42
 # 早停策略：基于val_mAP监控，patience默认30
-EARLY_STOPPING_PATIENCE=200
+EARLY_STOPPING_PATIENCE=60
 EARLY_STOPPING_MIN_DELTA=0.1  # mAP提升超过0.1%才算改进
 
 # 显存优化参数
@@ -140,7 +140,7 @@ VAL_RATIO=0.4  # 验证集比例（仅在USE_SIMPLE_SPLIT=true时使用）
 USE_PRETRAINED=false
 
 # 日志目录
-LOG_DIR="logs/final_starnet_models/sa_variants"
+LOG_DIR="logs/final_starnet_models/final_model"
 mkdir -p "$LOG_DIR"
 
 # ============================================

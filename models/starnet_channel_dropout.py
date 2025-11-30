@@ -1,14 +1,4 @@
-"""
-Implementation of Prof-of-Concept Network: StarNet.
 
-We make StarNet as simple as possible [to show the key contribution of element-wise multiplication]:
-    - like NO layer-scale in network design,
-    - and NO EMA during training,
-    - which would improve the performance further.
-
-Created by: Xu Ma (Email: ma.xu1@northeastern.edu)
-Modified Date: Mar/29/2024
-"""
 import torch
 import torch.nn as nn
 from timm.models.layers import DropPath, trunc_normal_
@@ -79,13 +69,6 @@ class Block(nn.Module):
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
         x = self.dwconv2(self.g(x))
-
-        # [修改] 在 DropPath 和残差连接之前应用注意力
-        # 这让网络在把特征加回主干之前，先"提炼"一次特征
-        # [修正] 只有开启开关才进行注意力计算
-        if self.with_attn:
-            x = self.sa(x)
-
         x = input + self.drop_path(x)
         return x
 
@@ -190,18 +173,3 @@ def starnet_s4(pretrained=False, **kwargs):
         model.load_state_dict(checkpoint["state_dict"])
     return model
 
-
-# very small networks #
-@register_model
-def starnet_s050(pretrained=False, **kwargs):
-    return StarNet(16, [1, 1, 3, 1], 3, **kwargs)
-
-
-@register_model
-def starnet_s100(pretrained=False, **kwargs):
-    return StarNet(20, [1, 2, 4, 1], 4, **kwargs)
-
-
-@register_model
-def starnet_s150(pretrained=False, **kwargs):
-    return StarNet(24, [1, 2, 4, 2], 3, **kwargs)

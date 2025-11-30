@@ -26,7 +26,6 @@ class SpatialAttention(nn.Module):
         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
         padding = 3 if kernel_size == 7 else 1
         self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        self.bn = nn.BatchNorm2d(1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -45,12 +44,6 @@ class SpatialAttention(nn.Module):
         return x * scale
 # ==========================================
 
-model_urls = {
-    "starnet_s1": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s1.pth.tar",
-    "starnet_s2": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s2.pth.tar",
-    "starnet_s3": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s3.pth.tar",
-    "starnet_s4": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s4.pth.tar",
-}
 
 
 class ConvBN(torch.nn.Sequential):
@@ -94,7 +87,7 @@ class Block(nn.Module):
         return x
 
 
-class StarNet(nn.Module):
+class StarNet_Attention(nn.Module):
     def __init__(self, base_dim=32, depths=[3, 3, 12, 5], mlp_ratio=4, drop_path_rate=0.0, num_classes=1000, dropout_rate=0.1, use_attn=None, use_multi_head=False, cls_num_list=None, **kwargs):
         """
         Args:
@@ -219,7 +212,7 @@ class StarNet(nn.Module):
 
 
 @register_model
-def starnet_s1(pretrained=False, **kwargs):
+def starnet_s1_attention(pretrained=False, **kwargs):
     model = StarNet(24, [2, 2, 8, 3], use_attn=None, **kwargs)
     if pretrained:
         url = model_urls['starnet_s1']

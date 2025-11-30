@@ -84,30 +84,30 @@ class Block(nn.Module):
         
         # ⭐ 添加 GRN 模块（在 Star Operation 之后）
         mid_dim = mlp_ratio * dim
-        # self.grn = GRN(dim=mid_dim)
+        self.grn = GRN(dim=mid_dim)
         
         self.g = ConvBN(mlp_ratio * dim, dim, 1, with_bn=True)
         self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
-        self.act = nn.SiLU()
+        self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         
         # ⭐ 可选的空间注意力机制
-        self.use_sa = use_sa
-        self.sa = SpatialAttention(kernel_size=7)
+        # self.use_sa = use_sa
+        # self.sa = SpatialAttention(kernel_size=7)
 
     def forward(self, x):
         input = x
         
         # ⭐ 可选：在输入处应用空间注意力
-        if self.use_sa:
-            x = self.sa(x)
+        # if self.use_sa:
+        #     x = self.sa(x)
         
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2  # Star Operation
         
         # ⭐ 应用 GRN（在投影之前）
-        # x = self.grn(x)
+        x = self.grn(x)
         
         x = self.dwconv2(self.g(x))
         x = input + self.drop_path(x)
@@ -143,11 +143,14 @@ class CrossStarBlock(nn.Module):
         self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
-        self.sa = SpatialAttention(kernel_size=7)
+        # self.sa = SpatialAttention(kernel_size=7)
+
+        mid_dim = mlp_ratio * dim
+        self.grn = GRN(dim=mid_dim)
 
     def forward(self, x):
         input = x
-        x = self.sa(x) # 空间注意力
+        # x = self.sa(x) # 空间注意力
         x = self.dwconv(x)
         
         # 1. 计算四个子分支的特征
@@ -163,8 +166,11 @@ class CrossStarBlock(nn.Module):
         
         # 3. Concatenate (Inception Style)
         x_out = torch.cat((y12, y21), dim=1) # 沿着通道维度拼接
+
+        # 4. 应用 GRN（在投影之前，对拼接后的特征进行归一化）
+        x_out = self.grn(x_out)
         
-        # 4. 投影回输入维度
+        # 5. 投影回输入维度
         x_out = self.dwconv2(self.g(x_out))
         x_out = input + self.drop_path(x_out)
         return x_out
