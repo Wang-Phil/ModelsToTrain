@@ -258,6 +258,11 @@ class CrossStarBlock(nn.Module):
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.sa = SpatialAttention(kernel_size=7)
+        # 为每个分支创建独立的 GRN（维度为 self.mid_dim）
+        self.grn_y12 = GRN(dim=self.mid_dim)  # 用于 y12 分支
+        self.grn_y21 = GRN(dim=self.mid_dim)  # 用于 y21 分支
+
+        
     def forward(self, x):
         input = x
         x = self.sa(x)
@@ -270,10 +275,12 @@ class CrossStarBlock(nn.Module):
         # 2. 交叉星乘 (Cross-Star Operation) - D (基线)
         # 乘法 1: Local (3A) 调制 Context (7B) -> 强调局部细节在全局语境中的作用
         y12 = self.act(x_3A) * x_7B 
-        
+        y12 = self.grn_y12(y12)
+
         # 乘法 2: Context (7A) 调制 Local (3B) -> 强调全局语境对局部细节的校正
         y21 = self.act(x_7A) * x_3B 
-        
+        y21 = self.grn_y21(y21)
+
         # 3. Concatenate (Inception Style)
         x_out = torch.cat((y12, y21), dim=1) # 沿着通道维度拼接
         
@@ -319,10 +326,6 @@ class Block(nn.Module):
         x = self.act(x1) * x2
         x = self.grn(x)
         x = self.dwconv2(self.g(x))
-
-        # [修改] 在 DropPath 和残差连接之前应用注意力（已注释）
-        # 这让网络在把特征加回主干之前，先"提炼"一次特征
-        # [修正] 只有开启开关才进行注意力计算
         
         x = input + self.drop_path(x)
         return x
@@ -383,10 +386,10 @@ class StarNet_FINAL(nn.Module):
         self.norm = nn.BatchNorm2d(self.in_channel)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         # Dropout已注释
-        # if dropout_rate > 0:
-        #     self.dropout = nn.Dropout(dropout_rate)
-        # else:
-        self.dropout = nn.Identity()
+        if dropout_rate > 0:
+            self.dropout = nn.Dropout(dropout_rate)
+        else:
+            self.dropout = nn.Identity()
         
         # 特征维度
         feat_dim = self.in_channel
@@ -440,7 +443,7 @@ class StarNet_FINAL(nn.Module):
         for stage in self.stages:
             x = stage(x)
         features = torch.flatten(self.avgpool(self.norm(x)), 1)
-        # features = self.dropout(features)  # Dropout已注释
+        features = self.dropout(features)  # Dropout已注释
         
         if self.use_multi_head:
             # 多分类头模式

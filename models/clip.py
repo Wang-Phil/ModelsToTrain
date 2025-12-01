@@ -1,6 +1,17 @@
 """
 CLIP风格的医学图像分类模型
 实现图像-文本对齐的零样本分类
+
+模型架构说明：
+- 本模型采用CLIP（Contrastive Language-Image Pre-training）的对比学习架构思想
+- 图像编码器：使用预训练的视觉模型（ResNet/ViT/EfficientNet/ConvNeXt/StarNet等）作为backbone
+- 文本编码器：使用预训练的语言模型（BERT中文或CLIP文本编码器）作为backbone
+- 投影层：将图像和文本特征投影到统一的嵌入空间（embed_dim）
+- 温度参数：可学习的温度参数用于对比学习中的相似度缩放
+- 训练方式：通过图像-文本对比学习进行端到端微调，学习跨模态对齐
+
+注意：这不是直接使用OpenAI的预训练CLIP模型，而是采用CLIP架构思想，
+使用独立的预训练编码器组合，并通过对比学习进行微调。
 """
 
 import torch
@@ -530,12 +541,13 @@ class CLIPModel(nn.Module):
         similarity = similarity / self.temperature
         return similarity
     
-    def predict(self, images, class_texts):
+    def predict(self, images, class_texts=None, text_features=None):
         """
         预测图像的类别
         Args:
             images: 图像tensor [batch_size, 3, H, W]
-            class_texts: 类别文本描述列表
+            class_texts: 类别文本描述列表（可选，如果提供text_features则不需要）
+            text_features: 预计算的类别文本特征 [num_classes, embed_dim]（可选，如果提供则不需要class_texts）
         Returns:
             predictions: 预测的类别索引 [batch_size]
             probabilities: 每个类别的概率 [batch_size, num_classes]
@@ -545,8 +557,11 @@ class CLIPModel(nn.Module):
             # 编码图像
             image_features = self.image_encoder(images)
             
-            # 编码所有类别的文本描述
-            text_features = self.text_encoder(texts=class_texts)
+            # 编码所有类别的文本描述（如果未提供预计算的文本特征）
+            if text_features is None:
+                if class_texts is None:
+                    raise ValueError("Either class_texts or text_features must be provided")
+                text_features = self.text_encoder(texts=class_texts)
             
             # 计算相似度
             similarity = self.compute_similarity(image_features, text_features)
@@ -558,6 +573,19 @@ class CLIPModel(nn.Module):
             predictions = torch.argmax(similarity, dim=1)
         
         return predictions, probabilities
+    
+    def precompute_class_text_features(self, class_texts):
+        """
+        预计算所有类别的文本特征（用于推理加速）
+        Args:
+            class_texts: 类别文本描述列表
+        Returns:
+            text_features: 预计算的文本特征 [num_classes, embed_dim]
+        """
+        self.eval()
+        with torch.no_grad():
+            text_features = self.text_encoder(texts=class_texts)
+        return text_features
 
 
 def create_model(config):

@@ -12,10 +12,10 @@ set -e  # 遇到错误立即退出
 DATA_DIR="single_label_data"
 
 # 输出基础目录
-OUTPUT_BASE_DIR="checkpoints/final_starnet_models/attention_ablation"
+OUTPUT_BASE_DIR="checkpoints/final_starnet_models/final_model"
 
 # GPU列表（用空格分隔，例如: "0 1 2 3"）
-GPUS=(1 5 6 7)
+GPUS=(8 1 5 6 7)
 
 # PLD setting for long tail 
 #===============================
@@ -83,7 +83,7 @@ MODELS=(
     # "starnet_s3_final"
 
     # 空间注意力消融实验 (Spatial Attention Variants)
-    # "starnet_sa_s1"  # 所有stage都加空间注意力 (stage 0,1,2,3)
+    "starnet_sa_s1"  # 所有stage都加空间注意力 (stage 0,1,2,3)
     # "starnet_sa_s2"  # 第一个stage不加注意力 (stage 1,2,3加注意力)
     # "starnet_sa_s3"  # 前两个stage不加注意力 (stage 2,3加注意力)
     # "starnet_sa_s4"  # 前三个stage不加注意力 (只有stage 3加注意力)
@@ -100,10 +100,10 @@ MODELS=(
     # "starnet_cf_s3"
 
     # 空间注意力机制消融实验
-    "starnet_s1"
-    "starnet_s2"
-    "starnet_s3"
-    "starnet_s4"
+    # "starnet_s1"
+    # "starnet_s2"
+    # "starnet_s3"
+    # "starnet_s4"
 
 )
 
@@ -146,7 +146,7 @@ VAL_RATIO=0.4  # 验证集比例（仅在USE_SIMPLE_SPLIT=true时使用）
 USE_PRETRAINED=false
 
 # 日志目录
-LOG_DIR="logs/final_starnet_models/attention_ablation"
+LOG_DIR="logs/final_starnet_models/final_model"
 mkdir -p "$LOG_DIR"
 
 # ============================================

@@ -235,7 +235,6 @@ class CrossStarBlock(nn.Module):
     """
     def __init__(self, dim, mlp_ratio=3, drop_path=0.,with_attn=False):
         super().__init__()
-        
         # 保持原有的输入处理 (7x7 Depthwise Conv)
         self.dwconv = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=True)
         
@@ -262,8 +261,14 @@ class CrossStarBlock(nn.Module):
         self.grn_y12 = GRN(dim=self.mid_dim)  # 用于 y12 分支
         self.grn_y21 = GRN(dim=self.mid_dim)  # 用于 y21 分支
 
+        # 空间注意力模块
+        self.sa = SpatialAttention(kernel_size=7)
+
     def forward(self, x):
         input = x
+        # 空间注意力模块
+        x = self.sa(x)
+
         x = self.dwconv(x)
         
         # 1. 计算四个子分支的特征
@@ -311,14 +316,14 @@ class Block(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # 3. 空间注意力模块（已注释）
         # self.with_attn = with_attn
-        # self.sa = SpatialAttention(kernel_size=7)
+        self.sa = SpatialAttention(kernel_size=7)
         mid_dim = mlp_ratio * dim
         self.grn = GRN(dim=mid_dim)
 
     def forward(self, x):
         input = x
         # if self.with_attn:
-        #     x = self.sa(x)
+        x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
