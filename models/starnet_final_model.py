@@ -244,16 +244,15 @@ class CrossStarBlock(nn.Module):
         
         # --- Multi-Scale Branches for Cross-Star Operation ---
         
-        # Branch 1 (Local): 3x3 Convs (捕捉局部细节)
-        self.f3_A = ConvBN(dim, self.mid_dim, 3, 1, 1, with_bn=False) # Conv_{3x3} A
-        self.f3_B = ConvBN(dim, self.mid_dim, 3, 1, 1, with_bn=False) # Conv_{3x3} B
+        # Branch 1 (Local): 3x3 Conv (捕捉局部细节)
+        self.f3 = ConvBN(dim, self.mid_dim, 3, 1, 1, with_bn=False) # Conv_{3x3}
         
-        # Branch 2 (Context): 7x7 Convs (捕捉全局语境和纹理)
-        self.f7_A = ConvBN(dim, self.mid_dim, 7, 1, 3, with_bn=False) # Conv_{7x7} A
-        self.f7_B = ConvBN(dim, self.mid_dim, 7, 1, 3, with_bn=False) # Conv_{7x7} B
+        # Branch 2 (Context): 7x7 Conv (捕捉全局语境和纹理)
+        self.f7 = ConvBN(dim, self.mid_dim, 7, 1, 3, with_bn=False) # Conv_{7x7}
         
         # 融合与输出
-        self.g = ConvBN(dim * mlp_ratio, dim, 1, with_bn=True) # 融合后的总通道是 mid_dim * 2
+        # 注意：如果只使用 y12（不concat y21），输入通道数应该是 mid_dim 而不是 dim * mlp_ratio
+        self.g = ConvBN(self.mid_dim, dim, 1, with_bn=True) # 输入通道数改为 mid_dim
         self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -268,26 +267,105 @@ class CrossStarBlock(nn.Module):
         x = self.sa(x)
         x = self.dwconv(x)
         
-        # 1. 计算四个子分支的特征
-        x_3A, x_3B = self.f3_A(x), self.f3_B(x)
-        x_7A, x_7B = self.f7_A(x), self.f7_B(x)
+        # 1. 计算两个分支的特征（共享参数）
+        x_3 = self.f3(x)
+        x_7 = self.f7(x)
+
         
         # 2. 交叉星乘 (Cross-Star Operation) - D (基线)
-        # 乘法 1: Local (3A) 调制 Context (7B) -> 强调局部细节在全局语境中的作用
-        y12 = self.act(x_3A) * x_7B 
-        y12 = self.grn_y12(y12)
-
-        # 乘法 2: Context (7A) 调制 Local (3B) -> 强调全局语境对局部细节的校正
-        y21 = self.act(x_7A) * x_3B 
-        y21 = self.grn_y21(y21)
-
-        # 3. Concatenate (Inception Style)
-        x_out = torch.cat((y12, y21), dim=1) # 沿着通道维度拼接
+        # 乘法 1: Point-wise (1A) 调制 Local (3B) -> 强调点卷积对局部细节的调制
+        y12 = self.act(x_3) * x_7
+        x_out = self.grn_y12(y12)
         
         # 4. 投影回输入维度
         x_out = self.dwconv2(self.g(x_out))
         x_out = input + self.drop_path(x_out)
         return x_out
+
+
+class LightSKBlock(nn.Module):
+    """
+    轻量级自适应选择性卷积块 (Lightweight Selective Kernel Block)
+    核心功能：动态选择最佳的感受野尺度 (3x3 vs 7x7)
+    """
+    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
+        super().__init__()
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
+        
+        # 1. 通道降维比例 (用于注意力计算的 bottleneck)
+        reduction = 4
+        hidden_dim = max(dim // reduction, 32)
+
+        # 2. 定义多尺度分支 (全部使用 DWConv 以节省参数)
+        # 分支 A: 3x3 (Local)
+        self.conv_3x3 = nn.Sequential(
+            nn.Conv2d(dim, dim, 3, padding=1, groups=dim, bias=False),
+            nn.BatchNorm2d(dim),
+            nn.ReLU6()
+        )
+        # 分支 B: 3x3 dilation=3 (Context, 感受野=7x7)
+        self.conv_7x7 = nn.Sequential(
+            nn.Conv2d(dim, dim, 3, padding=3, dilation=3, groups=dim, bias=False),
+            nn.BatchNorm2d(dim),
+            nn.ReLU6()
+        )
+
+        # 3. 自适应注意力生成器 (Adaptive Attention)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Conv2d(dim, hidden_dim, 1, bias=False),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU6(),
+            nn.Conv2d(hidden_dim, dim * 2, 1, bias=False) # 输出两个分支的权重
+        )
+        self.softmax = nn.Softmax(dim=1)
+
+        # 4. 后续处理 (FFN / MLP)
+        self.proj = ConvBN(dim, dim, 1, with_bn=True) # 融合一下
+        
+        # FFN 部分
+        self.mlp = nn.Sequential(
+            ConvBN(dim, int(dim * mlp_ratio), 1, with_bn=False),
+            nn.ReLU6(),
+            ConvBN(int(dim * mlp_ratio), dim, 1, with_bn=True)
+        )
+        
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+        # 5. 空间注意力精炼 (依然保留，作为辅助)
+        self.sa = SpatialAttention(kernel_size=7)
+
+    def forward(self, x):
+        input = x
+        x = self.sa(x)
+        # --- SK Unit Start ---
+        # 1. 并行计算两个尺度
+        feat_3 = self.conv_3x3(x)
+        feat_7 = self.conv_7x7(x)
+        
+        # 2. 特征相加，计算全局描述符
+        feat_sum = feat_3 + feat_7
+        attn_vec = self.gap(feat_sum) # [B, C, 1, 1]
+        
+        # 3. 生成权重 [B, 2*C, 1, 1] -> 变形为 [B, 2, C, 1, 1]
+        attn_weights = self.fc(attn_vec)
+        B, _, H, W = x.shape
+        attn_weights = attn_weights.view(B, 2, self.dim, 1, 1)
+        attn_weights = self.softmax(attn_weights) # 在两个分支间归一化
+        
+        # 4. 加权融合 (Soft Attention Fusion)
+        # weight[0] * feat_3 + weight[1] * feat_7
+        x_sk = (attn_weights[:, 0] * feat_3) + (attn_weights[:, 1] * feat_7)
+        # --- SK Unit End ---
+
+        x = self.proj(x_sk)
+
+        # FFN
+        x = x + self.drop_path(self.mlp(x))
+
+        x = input + self.drop_path(x)
+        return x
 
 
 
@@ -319,8 +397,8 @@ class Block(nn.Module):
 
     def forward(self, x):
         input = x
-        if self.with_attn:
-            x = self.sa(x)
+        # if self.with_attn:
+        x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
@@ -329,7 +407,6 @@ class Block(nn.Module):
         
         x = input + self.drop_path(x)
         return x
-
 
 class StarNet_FINAL(nn.Module):
     def __init__(self, base_dim=32, depths=[3, 3, 12, 5], mlp_ratio=4, drop_path_rate=0.0, num_classes=1000, dropout_rate=0.1, use_attn=None, use_multi_head=False, cls_num_list=None, **kwargs):
@@ -373,7 +450,7 @@ class StarNet_FINAL(nn.Module):
             if i_layer < 2:
                 BlockType = Block
             else:
-                BlockType = CrossStarBlock
+                BlockType = LightSKBlock
 
             blocks = [
                 BlockType(self.in_channel, mlp_ratio, dpr[cur + i], with_attn=use_attn_here) 
@@ -386,10 +463,10 @@ class StarNet_FINAL(nn.Module):
         self.norm = nn.BatchNorm2d(self.in_channel)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         # Dropout已注释
-        if dropout_rate > 0:
-            self.dropout = nn.Dropout(dropout_rate)
-        else:
-            self.dropout = nn.Identity()
+        # if dropout_rate > 0:
+        #     self.dropout = nn.Dropout(dropout_rate)
+        # else:
+        self.dropout = nn.Identity()
         
         # 特征维度
         feat_dim = self.in_channel
@@ -443,7 +520,7 @@ class StarNet_FINAL(nn.Module):
         for stage in self.stages:
             x = stage(x)
         features = torch.flatten(self.avgpool(self.norm(x)), 1)
-        features = self.dropout(features)  # Dropout已注释
+        # features = self.dropout(features)  # Dropout已注释
         
         if self.use_multi_head:
             # 多分类头模式
