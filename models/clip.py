@@ -32,18 +32,7 @@ try:
 except ImportError:
     CLIP_AVAILABLE = False
 
-# 导入 starnet_dual_pyramid_rcf 模型
-try:
-    from .starnet_dual_pyramid_rcf import StarNet_DualPyramid_RCF, starnet_dual_pyramid_rcf
-    STARNET_DUAL_PYRAMID_AVAILABLE = True
-except ImportError:
-    try:
-        from starnet_dual_pyramid_rcf import StarNet_DualPyramid_RCF, starnet_dual_pyramid_rcf
-        STARNET_DUAL_PYRAMID_AVAILABLE = True
-    except ImportError:
-        STARNET_DUAL_PYRAMID_AVAILABLE = False
-
-# 导入标准 StarNet 模型
+# 导入标准 StarNet 模型（仅保留有预训练权重的模型）
 try:
     from .starnet import StarNet, starnet_s1, starnet_s2, starnet_s3, starnet_s4, starnet_s050, starnet_s100, starnet_s150
     STARNET_AVAILABLE = True
@@ -53,79 +42,6 @@ except ImportError:
         STARNET_AVAILABLE = True
     except ImportError:
         STARNET_AVAILABLE = False
-
-
-class StarNetFeatureExtractor(nn.Module):
-    """StarNet Dual-Pyramid RCF 特征提取器 - 移除分类层，仅提取特征"""
-    
-    def __init__(self, base=24, depths=[2, 2, 8, 3], global_depths=[1, 1, 1, 1], 
-                 mlp_ratio=4, drop_path=0.1, use_attn=0, dropout_rate=0.1, num_classes=1000):
-        super(StarNetFeatureExtractor, self).__init__()
-        
-        if not STARNET_DUAL_PYRAMID_AVAILABLE:
-            raise ImportError("starnet_dual_pyramid_rcf 模型不可用。请确保 starnet_dual_pyramid_rcf.py 在同一目录下。")
-        
-        # 创建完整的 StarNet 模型
-        self.model = StarNet_DualPyramid_RCF(
-            base=base,
-            depths=depths,
-            num_classes=num_classes,
-            mlp_ratio=mlp_ratio,
-            drop_path=drop_path,
-            global_depths=global_depths,
-            use_attn=use_attn,
-            dropout_rate=dropout_rate
-        )
-        
-        # 移除分类层，保留特征提取部分
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        
-    def forward(self, x):
-        """
-        提取特征
-        Args:
-            x: 输入图像 [batch_size, 3, H, W]
-        Returns:
-            features: 特征向量 [batch_size, feature_dim]
-        """
-        # 复制 StarNet 的前向传播逻辑，但不进行最终分类
-        # 1. Global Pyramid 独立运行
-        G = self.model.global_pyr(x)
-        
-        # 2. Local Pyramid 初始化
-        L_current = self.model.local.stem(x)
-        fused_features = []
-        
-        # 3. 逐层迭代，执行 RCF 逻辑
-        for i in range(4):
-            # Downsample
-            L_proj = self.model.local.downsamples[i](L_current)
-            
-            # Local Pyramid Stage i 的输出
-            L_i_out = self.model.local.blocks_list[i](L_proj)
-            
-            # 融合特征: F_i = L_i * (1-w) + Adapter(G_i) * w
-            A = self.model.adapters[i](G[i])
-            w = torch.sigmoid(self.model.fuse_weights[i])
-            F_i = L_i_out * (1 - w) + A * w
-            
-            fused_features.append(F_i)
-            
-            # 残差级联融合
-            if i < 3:
-                gamma = self.model.gamma_weights[i]
-                L_current = L_i_out + gamma * F_i
-            else:
-                L_current = L_i_out
-        
-        # 4. 使用最后一个 Stage 的融合特征
-        x = fused_features[-1]
-        
-        # 5. 池化和归一化（不使用分类层）
-        x = self.pool(self.model.norm(x))
-        x = torch.flatten(x, 1)
-        
-        return x
 
 
 class StandardStarNetFeatureExtractor(nn.Module):
@@ -249,23 +165,8 @@ class ImageEncoder(nn.Module):
             except ImportError:
                 raise ImportError("ConvNeXt需要安装timm库: pip install timm")
         
-        # StarNet Dual-Pyramid RCF 模型
-        elif model_name == 'starnet_dual_pyramid_rcf':
-            if not STARNET_DUAL_PYRAMID_AVAILABLE:
-                raise ImportError("starnet_dual_pyramid_rcf 模型不可用。请确保 starnet_dual_pyramid_rcf.py 在同一目录下。")
-            
-            # 创建特征提取包装器
-            self.backbone = StarNetFeatureExtractor()
-            # 动态获取特征维度
-            with torch.no_grad():
-                dummy_input = torch.randn(1, 3, 224, 224)
-                dummy_output = self.backbone(dummy_input)
-                feature_dim = dummy_output.shape[1]
-            self.projection = nn.Linear(feature_dim, embed_dim)
-            self.forward_fn = self._forward_starnet
-        
-        # 标准 StarNet 模型系列
-        elif model_name.startswith('starnet_') and model_name != 'starnet_dual_pyramid_rcf':
+        # 标准 StarNet 模型系列（仅保留有预训练权重的模型）
+        elif model_name.startswith('starnet_'):
             if not STARNET_AVAILABLE:
                 raise ImportError("StarNet 模型不可用。请确保 starnet.py 在同一目录下。")
             
@@ -303,8 +204,7 @@ class ImageEncoder(nn.Module):
         else:
             raise ValueError(f"Unsupported model: {model_name}. "
                            f"支持的模型: resnet18/34/50/101/152, vit, efficientnet-b0~b7, "
-                           f"convnext-tiny/small/base/large, starnet_dual_pyramid_rcf, "
-                           f"starnet_s1/s2/s3/s4/s050/s100/s150")
+                           f"convnext-tiny/small/base/large, starnet_s1/s2/s3/s4/s050/s100/s150")
         
     def _forward_resnet(self, x):
         """ResNet前向传播"""
@@ -333,7 +233,7 @@ class ImageEncoder(nn.Module):
         return x
     
     def _forward_starnet(self, x):
-        """StarNet 前向传播（支持标准 StarNet 和 Dual-Pyramid RCF）"""
+        """StarNet 前向传播"""
         x = self.backbone(x)  # 提取特征 [batch_size, feature_dim]
         x = self.projection(x)  # 投影到 embed_dim
         return x
@@ -349,6 +249,11 @@ class TextEncoder(nn.Module):
     """文本编码器 - 使用BERT或CLIP的文本编码器"""
     
     def __init__(self, model_name='bert-base-chinese', embed_dim=512):
+        """
+        Args:
+            model_name: 模型名称
+            embed_dim: embedding维度
+        """
         super(TextEncoder, self).__init__()
         self.embed_dim = embed_dim
         
@@ -441,6 +346,9 @@ class TextEncoder(nn.Module):
             texts: raw text strings (will be tokenized if input_ids not provided)
         """
         if self.model_name.startswith('bert'):
+            device = next(self.parameters()).device
+            
+            # 传统方式：使用文本提示
             if texts is not None:
                 encoded = self.tokenizer(
                     texts,
@@ -449,8 +357,8 @@ class TextEncoder(nn.Module):
                     max_length=128,
                     return_tensors='pt'
                 )
-                input_ids = encoded['input_ids'].to(next(self.parameters()).device)
-                attention_mask = encoded['attention_mask'].to(next(self.parameters()).device)
+                input_ids = encoded['input_ids'].to(device)
+                attention_mask = encoded['attention_mask'].to(device)
             
             outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
             # 使用[CLS] token的表示
@@ -490,6 +398,13 @@ class CLIPModel(nn.Module):
         embed_dim=512,
         temperature=0.07
     ):
+        """
+        Args:
+            image_encoder_name: 图像编码器名称
+            text_encoder_name: 文本编码器名称
+            embed_dim: embedding维度
+            temperature: 温度参数
+        """
         super(CLIPModel, self).__init__()
         self.embed_dim = embed_dim
         self.temperature = nn.Parameter(torch.tensor(temperature))
@@ -537,6 +452,7 @@ class CLIPModel(nn.Module):
         """
         # 计算余弦相似度（已经归一化，所以直接矩阵乘法）
         similarity = image_features @ text_features.T  # [batch_size, num_classes]
+        
         # 应用温度参数
         similarity = similarity / self.temperature
         return similarity
@@ -597,4 +513,5 @@ def create_model(config):
         temperature=config.get('temperature', 0.07)
     )
     return model
+
 

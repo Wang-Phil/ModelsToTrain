@@ -30,6 +30,14 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 
 # 导入CLIP模型
 from models.clip import CLIPModel, ImageEncoder, TextEncoder
+
+# 导入 MetaCLIP 适配器（可选）
+try:
+    from models.metaclip_adapter import MetaCLIPAdapter, create_metaclip_model
+    METACLIP_AVAILABLE = True
+except ImportError:
+    METACLIP_AVAILABLE = False
+    print("Warning: MetaCLIP adapter not available. Install MetaCLIP to use MetaCLIP pretrained models.")
 if 'HF_ENDPOINT' not in os.environ:
     os.environ.setdefault('HF_ENDPOINT', 'https://hf-mirror.com')
 
@@ -265,6 +273,26 @@ class CLIPLoss(nn.Module):
         Returns:
             loss: 标量损失值
         """
+        # 确保特征形状正确
+        # 如果 image_features 的形状不对，尝试修复
+        if len(image_features.shape) > 2:
+            # 如果是 [batch_size, H, W, C] 或其他形状，需要 flatten
+            image_features = image_features.view(image_features.shape[0], -1)
+        
+        # 检查维度是否匹配
+        if len(image_features.shape) != 2 or len(text_features.shape) != 2:
+            raise ValueError(f"特征形状错误: image_features={image_features.shape}, text_features={text_features.shape}")
+        
+        # 如果 embed_dim 不匹配，可能需要调整
+        if image_features.shape[1] != text_features.shape[1]:
+            # 如果 image_features 的维度不对，可能是某个地方搞混了
+            # 尝试重塑或投影
+            if image_features.shape[0] == text_features.shape[1] and image_features.shape[1] == text_features.shape[0]:
+                # 可能是转置了
+                image_features = image_features.T
+            else:
+                raise ValueError(f"特征维度不匹配: image_features={image_features.shape}, text_features={text_features.shape}")
+        
         # 归一化特征
         image_features = F.normalize(image_features, dim=1)
         text_features = F.normalize(text_features, dim=1)
@@ -292,6 +320,236 @@ class CLIPLoss(nn.Module):
             raise NotImplementedError("Image-class pairing needs labels for loss calculation")
         
         return loss
+
+
+class SuperCLIPLoss(nn.Module):
+    """
+    SuperCLIP 损失函数（基于 SuperCLIP 官方实现）
+    结合分类损失和对比损失
+    参考: superclip/open_clip/loss.py SuperClipLoss
+    """
+    
+    def __init__(self, temperature=0.07, class_loss_weight=1.0, contrastive_loss_weight=1.0,
+                 use_focal_loss=False, focal_alpha=0.25, focal_gamma=2.0, world_size=1):
+        """
+        Args:
+            temperature: 温度参数（用于对比损失，实际使用 logit_scale）
+            class_loss_weight: 分类损失权重
+            contrastive_loss_weight: 对比损失权重
+            use_focal_loss: 是否使用 focal loss 作为分类损失（默认False，使用SuperCLIP的KL散度形式）
+            focal_alpha: Focal loss 的 alpha 参数（默认0.25）
+            focal_gamma: Focal loss 的 gamma 参数（默认2.0）
+            world_size: 分布式训练时的world_size（默认1，单GPU）
+        """
+        super().__init__()
+        self.temperature = temperature
+        self.class_loss_weight = class_loss_weight
+        self.contrastive_loss_weight = contrastive_loss_weight
+        self.use_focal_loss = use_focal_loss
+        self.focal_alpha = focal_alpha
+        self.focal_gamma = focal_gamma
+        self.world_size = world_size
+        
+        # 用于跟踪类别频率（用于重加权）- 如果未从外部传入则使用内部buffer
+        self.register_buffer('_internal_cap_fq', None)
+        self.register_buffer('_internal_num_samples', None)
+    
+    def loss(self, logits, targets):
+        """
+        SuperCLIP 的分类损失实现（KL散度形式）
+        参考: superclip/open_clip/loss.py SuperClipLoss.loss()
+        
+        Args:
+            logits: [batch_size, num_classes] 分类logits
+            targets: [batch_size, num_classes] 归一化的目标分布（one-hot或soft）
+        Returns:
+            loss: 标量损失值
+        """
+        # SuperCLIP 的实现方式：L1归一化 + KL散度
+        norm_item = F.normalize(targets, p=1, dim=1)
+        loss = -(F.log_softmax(logits, dim=1) * norm_item).sum(dim=1).mean()
+        return loss
+    
+    def reweight_targets(self, cap_fq, num_samples, targets):
+        """
+        SuperCLIP 的频率重加权实现
+        参考: superclip/open_clip/loss.py SuperClipLoss.reweight_targets()
+        
+        Args:
+            cap_fq: [1, num_classes] 或 [num_classes] 类别频率统计（会被原地修改）
+            num_samples: [1, 1] 或标量 样本计数（会被原地修改）
+            targets: [batch_size, num_classes] one-hot 目标
+        Returns:
+            reweighted_targets: 重加权后的目标
+        """
+        # 确保 cap_fq 和 num_samples 是 tensor
+        if not isinstance(cap_fq, torch.Tensor):
+            cap_fq = torch.tensor(cap_fq, device=targets.device, dtype=torch.float64)
+        if not isinstance(num_samples, torch.Tensor):
+            num_samples = torch.tensor(num_samples, device=targets.device, dtype=torch.float64)
+        
+        # 确保维度正确
+        if cap_fq.dim() == 1:
+            cap_fq = cap_fq.unsqueeze(0)
+        if num_samples.dim() == 0:
+            num_samples = num_samples.unsqueeze(0).unsqueeze(0)
+        elif num_samples.dim() == 1:
+            num_samples = num_samples.unsqueeze(0)
+        
+        # SuperCLIP 的累积更新方式
+        cap_fq += targets.sum(dim=0, keepdim=True) / targets.shape[0]
+        num_samples += 1
+        
+        # 计算重加权因子（SuperCLIP 公式）
+        all_batch_size = self.world_size * targets.shape[0]
+        reweight_factor = torch.log(
+            (num_samples + 1.0 / all_batch_size) / (cap_fq + 1.0 / all_batch_size)
+        ).to(dtype=targets.dtype)
+        
+        # 如果 cap_fq 是 [1, num_classes]，需要 squeeze
+        if reweight_factor.dim() == 2 and reweight_factor.shape[0] == 1:
+            reweight_factor = reweight_factor.squeeze(0)
+        
+        # 应用重加权
+        reweighted_targets = targets * reweight_factor.unsqueeze(0)
+        
+        return reweighted_targets
+    
+    def classification_loss(self, logits, targets):
+        """
+        分类损失（SuperCLIP KL散度形式 或 Focal Loss）
+        Args:
+            logits: [batch_size, num_classes] 分类logits
+            targets: [batch_size, num_classes] 归一化的目标分布（one-hot或soft）
+        Returns:
+            loss: 标量损失值
+        """
+        if self.use_focal_loss:
+            # 使用 Focal Loss（可选功能）
+            true_labels = targets.argmax(dim=1)
+            probs = F.softmax(logits, dim=1)
+            p_t = probs.gather(1, true_labels.unsqueeze(1)).squeeze(1)
+            focal_weight = (1 - p_t) ** self.focal_gamma
+            loss = -self.focal_alpha * focal_weight * torch.log(p_t + 1e-8)
+            loss = loss.mean()
+            
+            if torch.isnan(loss) or torch.isinf(loss):
+                loss = F.cross_entropy(logits, true_labels)
+        else:
+            # 使用 SuperCLIP 的 KL散度形式（默认）
+            loss = self.loss(logits, targets)
+            
+            # 确保损失不为NaN或Inf
+            if torch.isnan(loss) or torch.isinf(loss):
+                loss = F.cross_entropy(logits, targets.argmax(dim=1))
+        
+        return loss
+    
+    def forward(self, image_features, text_features, class_logits, labels, 
+                class_text_features=None, class_counts=None, total_samples=None, 
+                num_classes=None, smooth_factor=1.0, output_dict=False,
+                cap_fq=None, num_samples=None, logit_scale=None):
+        """
+        SuperCLIP 损失函数前向传播
+        支持两种调用方式：
+        1. 旧接口：传入 class_counts, total_samples（向后兼容）
+        2. 新接口：传入 cap_fq, num_samples（SuperCLIP 官方方式）
+        
+        Args:
+            image_features: [batch_size, embed_dim] 图像特征
+            text_features: [batch_size, embed_dim] 文本特征（用于对比损失）
+            class_logits: [batch_size, num_classes] 分类logits
+            labels: [batch_size] 真实类别标签
+            class_text_features: [num_classes, embed_dim] 所有类别的文本特征（可选）
+            class_counts: 每个类别的样本数（旧接口，用于重加权）
+            total_samples: 总样本数（旧接口，用于重加权）
+            num_classes: 类别数
+            smooth_factor: 平滑因子（旧接口，未使用）
+            output_dict: 是否返回字典格式
+            cap_fq: [1, num_classes] 类别频率统计（新接口，SuperCLIP方式）
+            num_samples: [1, 1] 样本计数（新接口，SuperCLIP方式）
+            logit_scale: 可学习的logit scale（用于对比损失，如果为None则使用temperature）
+        Returns:
+            loss 或 {"class_loss": ..., "contrastive_loss": ..., "total_loss": ...}
+        """
+        device = image_features.device
+        batch_size = image_features.shape[0]
+        
+        # 确定类别数
+        if num_classes is None:
+            num_classes = class_logits.shape[1]
+        
+        # 1. 分类损失
+        # 创建one-hot目标
+        targets = torch.zeros(batch_size, num_classes, dtype=torch.float32, device=device)
+        # labels 可能是 [B] 或 [B, seq_len]，取第一个token作为类别ID
+        if labels.dim() > 1:
+            labels_for_scatter = labels[:, 0].unsqueeze(1)
+        else:
+            labels_for_scatter = labels.unsqueeze(1)
+        targets.scatter_(dim=1, index=labels_for_scatter, value=1.0)
+        
+        # 重加权目标（SuperCLIP 方式）
+        if cap_fq is not None and num_samples is not None:
+            # 新接口：使用 SuperCLIP 官方方式
+            targets = self.reweight_targets(cap_fq, num_samples, targets)
+        elif class_counts is not None and total_samples is not None:
+            # 旧接口：兼容原有调用方式
+            # 初始化内部 buffer（如果未初始化）
+            if self._internal_cap_fq is None:
+                self._internal_cap_fq = torch.zeros(num_classes, device=device, dtype=torch.float64)
+            if self._internal_num_samples is None:
+                self._internal_num_samples = torch.zeros(1, device=device, dtype=torch.float64)
+            
+            # 转换为 SuperCLIP 格式
+            cap_fq = self._internal_cap_fq.unsqueeze(0)  # [1, num_classes]
+            num_samples = self._internal_num_samples.unsqueeze(0)  # [1, 1]
+            targets = self.reweight_targets(cap_fq, num_samples, targets)
+        
+        class_loss = self.classification_loss(class_logits, targets)
+        
+        # 2. 对比损失（CLIP loss）- SuperCLIP 实现方式
+        # 归一化特征
+        image_features_norm = F.normalize(image_features, dim=1)
+        text_features_norm = F.normalize(text_features, dim=1)
+        
+        # 使用 logit_scale 或 temperature
+        if logit_scale is not None:
+            # 如果 logit_scale 是 tensor，可能需要 exp()
+            if isinstance(logit_scale, torch.Tensor):
+                if logit_scale.numel() == 1:
+                    scale = logit_scale.exp() if logit_scale.item() < 10 else logit_scale
+                else:
+                    scale = logit_scale.mean()
+            else:
+                scale = logit_scale
+        else:
+            scale = 1.0 / self.temperature if self.temperature > 0 else 1.0
+        
+        # 计算相似度矩阵
+        logits_per_image = scale * image_features_norm @ text_features_norm.T
+        logits_per_text = scale * text_features_norm @ image_features_norm.T
+        
+        # 创建对比学习的标签（对角线匹配）
+        contrastive_labels = torch.arange(batch_size, device=device)
+        
+        # 双向对比损失（SuperCLIP 方式）
+        contrastive_loss = (
+            F.cross_entropy(logits_per_image, contrastive_labels) +
+            F.cross_entropy(logits_per_text, contrastive_labels)
+        ) / 2
+        
+        # 3. 组合损失
+        total_loss = self.class_loss_weight * class_loss + self.contrastive_loss_weight * contrastive_loss
+        
+        if output_dict:
+            return {
+                "class_loss": class_loss,
+                "contrastive_loss": contrastive_loss,
+                "total_loss": total_loss
+            }
+        
+        return total_loss
 
 
 def get_data_augmentation(augmentation_type='standard', img_size=224):
@@ -336,10 +594,14 @@ def get_data_augmentation(augmentation_type='standard', img_size=224):
     return train_transform, val_transform
 
 
-def train_epoch(model, dataloader, criterion, optimizer, device, epoch, use_amp=True, class_texts=None):
+def train_epoch(model, dataloader, criterion, optimizer, device, epoch, use_amp=True, 
+                class_texts=None, use_superclip_loss=False, class_counts=None, 
+                total_samples=None, num_classes=None, smooth_factor=1.0):
     """训练一个epoch"""
     model.train()
     running_loss = 0.0
+    running_class_loss = 0.0
+    running_contrastive_loss = 0.0
     correct = 0
     total = 0
     
@@ -357,8 +619,40 @@ def train_epoch(model, dataloader, criterion, optimizer, device, epoch, use_amp=
                 # 获取图像特征和文本特征
                 image_features, text_features = model(images, texts=texts)
                 
-                # 计算对比损失（batch内对比）
-                loss = criterion(image_features, text_features)
+                if use_superclip_loss and class_texts is not None and isinstance(criterion, SuperCLIPLoss):
+                    # 使用 SuperCLIP 损失（需要类别文本特征）
+                    # 编码所有类别的文本
+                    class_text_features = model.text_encoder(texts=class_texts)
+                    
+                    # 计算分类 logits（图像特征与所有类别文本的相似度）
+                    image_features_norm = F.normalize(image_features, dim=1)
+                    class_text_features_norm = F.normalize(class_text_features, dim=1)
+                    class_logits = (image_features_norm @ class_text_features_norm.T) / model.temperature
+                    
+                    # 计算 SuperCLIP 损失
+                    loss_dict = criterion(
+                        image_features=image_features,
+                        text_features=text_features,
+                        class_logits=class_logits,
+                        labels=labels,
+                        class_text_features=class_text_features,
+                        class_counts=class_counts,
+                        total_samples=total_samples,
+                        num_classes=num_classes,
+                        smooth_factor=smooth_factor,
+                        output_dict=True
+                    )
+                    loss = loss_dict['total_loss']
+                    class_loss = loss_dict['class_loss']
+                    contrastive_loss = loss_dict['contrastive_loss']
+                    
+                    running_class_loss += class_loss.item()
+                    running_contrastive_loss += contrastive_loss.item()
+                else:
+                    # 使用标准 CLIP 损失
+                    loss = criterion(image_features, text_features)
+                    class_loss = torch.tensor(0.0)
+                    contrastive_loss = loss
                 
                 # 计算准确率（使用类别文本）
                 if class_texts is not None:
@@ -371,8 +665,38 @@ def train_epoch(model, dataloader, criterion, optimizer, device, epoch, use_amp=
             scaler.step(optimizer)
             scaler.update()
         else:
+            # 获取图像特征和文本特征
             image_features, text_features = model(images, texts=texts)
-            loss = criterion(image_features, text_features)
+            
+            if use_superclip_loss and class_texts is not None and isinstance(criterion, SuperCLIPLoss):
+                # 使用 SuperCLIP 损失
+                class_text_features = model.text_encoder(texts=class_texts)
+                image_features_norm = F.normalize(image_features, dim=1)
+                class_text_features_norm = F.normalize(class_text_features, dim=1)
+                class_logits = (image_features_norm @ class_text_features_norm.T) / model.temperature
+                
+                loss_dict = criterion(
+                    image_features=image_features,
+                    text_features=text_features,
+                    class_logits=class_logits,
+                    labels=labels,
+                    class_text_features=class_text_features,
+                    class_counts=class_counts,
+                    total_samples=total_samples,
+                    num_classes=num_classes,
+                    smooth_factor=smooth_factor,
+                    output_dict=True
+                )
+                loss = loss_dict['total_loss']
+                class_loss = loss_dict['class_loss']
+                contrastive_loss = loss_dict['contrastive_loss']
+                
+                running_class_loss += class_loss.item()
+                running_contrastive_loss += contrastive_loss.item()
+            else:
+                loss = criterion(image_features, text_features)
+                class_loss = torch.tensor(0.0)
+                contrastive_loss = loss
             
             if class_texts is not None:
                 with torch.no_grad():
@@ -387,21 +711,38 @@ def train_epoch(model, dataloader, criterion, optimizer, device, epoch, use_amp=
         
         # 更新进度条
         acc_str = f'{100.0 * correct / total:.2f}%' if total > 0 else 'N/A'
-        pbar.set_postfix({
-            'loss': f'{loss.item():.4f}',
-            'acc': acc_str
-        })
+        if use_superclip_loss:
+            pbar.set_postfix({
+                'loss': f'{loss.item():.4f}',
+                'cls': f'{class_loss.item():.4f}' if isinstance(class_loss, torch.Tensor) else f'{class_loss:.4f}',
+                'clip': f'{contrastive_loss.item():.4f}' if isinstance(contrastive_loss, torch.Tensor) else f'{contrastive_loss:.4f}',
+                'acc': acc_str
+            })
+        else:
+            pbar.set_postfix({
+                'loss': f'{loss.item():.4f}',
+                'acc': acc_str
+            })
     
     epoch_loss = running_loss / len(dataloader)
     epoch_acc = 100.0 * correct / total if total > 0 else 0.0
     
-    return epoch_loss, epoch_acc
+    result = {'loss': epoch_loss, 'acc': epoch_acc}
+    if use_superclip_loss:
+        result['class_loss'] = running_class_loss / len(dataloader)
+        result['contrastive_loss'] = running_contrastive_loss / len(dataloader)
+    
+    return result
 
 
-def validate(model, dataloader, criterion, device, use_amp=True, class_texts=None, num_classes=None):
+def validate(model, dataloader, criterion, device, use_amp=True, class_texts=None, 
+             num_classes=None, use_superclip_loss=False, class_counts=None, 
+             total_samples=None, smooth_factor=1.0):
     """验证"""
     model.eval()
     running_loss = 0.0
+    running_class_loss = 0.0
+    running_contrastive_loss = 0.0
     correct = 0
     total = 0
     
@@ -417,7 +758,36 @@ def validate(model, dataloader, criterion, device, use_amp=True, class_texts=Non
             if use_amp:
                 with torch.amp.autocast('cuda'):
                     image_features, text_features = model(images, texts=texts)
-                    loss = criterion(image_features, text_features)
+                    
+                    if use_superclip_loss and class_texts is not None and isinstance(criterion, SuperCLIPLoss):
+                        # 使用 SuperCLIP 损失
+                        class_text_features = model.text_encoder(texts=class_texts)
+                        image_features_norm = F.normalize(image_features, dim=1)
+                        class_text_features_norm = F.normalize(class_text_features, dim=1)
+                        class_logits = (image_features_norm @ class_text_features_norm.T) / model.temperature
+                        
+                        loss_dict = criterion(
+                            image_features=image_features,
+                            text_features=text_features,
+                            class_logits=class_logits,
+                            labels=labels,
+                            class_text_features=class_text_features,
+                            class_counts=class_counts,
+                            total_samples=total_samples,
+                            num_classes=num_classes,
+                            smooth_factor=smooth_factor,
+                            output_dict=True
+                        )
+                        loss = loss_dict['total_loss']
+                        class_loss = loss_dict['class_loss']
+                        contrastive_loss = loss_dict['contrastive_loss']
+                        
+                        running_class_loss += class_loss.item()
+                        running_contrastive_loss += contrastive_loss.item()
+                    else:
+                        loss = criterion(image_features, text_features)
+                        class_loss = torch.tensor(0.0)
+                        contrastive_loss = loss
                     
                     if class_texts is not None:
                         predictions, probabilities = model.predict(images, class_texts)
@@ -425,7 +795,37 @@ def validate(model, dataloader, criterion, device, use_amp=True, class_texts=Non
                         predictions = torch.zeros(labels.size(0), dtype=torch.long, device=device)
             else:
                 image_features, text_features = model(images, texts=texts)
-                loss = criterion(image_features, text_features)
+                
+                if use_superclip_loss and class_texts is not None and isinstance(criterion, SuperCLIPLoss):
+                    # 使用 SuperCLIP 损失
+                    class_text_features = model.text_encoder(texts=class_texts)
+                    image_features_norm = F.normalize(image_features, dim=1)
+                    class_text_features_norm = F.normalize(class_text_features, dim=1)
+                    class_logits = (image_features_norm @ class_text_features_norm.T) / model.temperature
+                    
+                    loss_dict = criterion(
+                        image_features=image_features,
+                        text_features=text_features,
+                        class_logits=class_logits,
+                        labels=labels,
+                        class_text_features=class_text_features,
+                        class_counts=class_counts,
+                        total_samples=total_samples,
+                        num_classes=num_classes,
+                        smooth_factor=smooth_factor,
+                        output_dict=True
+                    )
+                    loss = loss_dict['total_loss']
+                    class_loss = loss_dict['class_loss']
+                    contrastive_loss = loss_dict['contrastive_loss']
+                    
+                    running_class_loss += class_loss.item()
+                    running_contrastive_loss += contrastive_loss.item()
+                else:
+                    loss = criterion(image_features, text_features)
+                    class_loss = torch.tensor(0.0)
+                    contrastive_loss = loss
+                
                 if class_texts is not None:
                     predictions, probabilities = model.predict(images, class_texts)
                 else:
@@ -440,10 +840,18 @@ def validate(model, dataloader, criterion, device, use_amp=True, class_texts=Non
                 all_labels.extend(labels.cpu().numpy())
             
             acc_str = f'{100.0 * correct / total:.2f}%' if total > 0 else 'N/A'
-            pbar.set_postfix({
-                'loss': f'{loss.item():.4f}',
-                'acc': acc_str
-            })
+            if use_superclip_loss:
+                pbar.set_postfix({
+                    'loss': f'{loss.item():.4f}',
+                    'cls': f'{class_loss.item():.4f}' if isinstance(class_loss, torch.Tensor) else f'{class_loss:.4f}',
+                    'clip': f'{contrastive_loss.item():.4f}' if isinstance(contrastive_loss, torch.Tensor) else f'{contrastive_loss:.4f}',
+                    'acc': acc_str
+                })
+            else:
+                pbar.set_postfix({
+                    'loss': f'{loss.item():.4f}',
+                    'acc': acc_str
+                })
     
     epoch_loss = running_loss / len(dataloader)
     epoch_acc = 100.0 * correct / total if total > 0 else 0.0
@@ -459,325 +867,24 @@ def validate(model, dataloader, criterion, device, use_amp=True, class_texts=Non
             print(f"警告: 计算mAP失败: {e}")
             val_mAP = 0.0
     
-    return epoch_loss, epoch_acc, all_predictions, all_labels, val_mAP
+    result = (epoch_loss, epoch_acc, all_predictions, all_labels, val_mAP)
+    if use_superclip_loss:
+        result = result + (running_class_loss / len(dataloader), running_contrastive_loss / len(dataloader))
+    
+    return result
 
 
-def train_clip_model(
-    data_dir,
-    output_dir,
-    image_encoder_name='starnet_dual_pyramid_rcf',
-    text_encoder_name='bert-base-chinese',
-    embed_dim=512,
-    batch_size=32,
-    epochs=100,
-    learning_rate=1e-4,
-    weight_decay=0.01,
-    temperature=0.07,
-    img_size=224,
-    augmentation='standard',
-    num_workers=4,
-    use_amp=True,
-    gpu_id=0,
-    resume_from=None,
-    save_best=True,
-    early_stopping_patience=None,
-    early_stopping_min_delta=0.0,
-    early_stopping_monitor='val_loss',
-    text_template=None,
-    class_texts_dict=None,
-    class_texts_file=None,
-    use_weighted_sampling=False,
-    weight_method='inverse_freq',
-    weight_smooth_factor=1.0,
-):
-    """
-    训练CLIP模型
-    
-    Args:
-        data_dir: 数据目录（按类别组织的文件夹）
-        output_dir: 输出目录
-        image_encoder_name: 图像编码器名称
-        text_encoder_name: 文本编码器名称
-        embed_dim: 嵌入维度
-        batch_size: 批次大小
-        epochs: 训练轮数
-        learning_rate: 学习率
-        weight_decay: 权重衰减
-        temperature: 温度参数
-        img_size: 图像大小
-        augmentation: 数据增强类型
-        num_workers: 数据加载工作进程数
-        use_amp: 是否使用混合精度训练
-        gpu_id: GPU ID
-        resume_from: 恢复训练的checkpoint路径
-        save_best: 是否保存最佳模型
-        early_stopping_patience: 早停耐心值，如果为None则不使用早停（默认None）
-        early_stopping_min_delta: 早停最小改进阈值（默认0.0）
-        early_stopping_monitor: 早停监控指标，'val_acc'或'val_loss'（默认'val_loss'）
-        text_template: 文本模板，例如 "这是一张{class_name}的图片"
-        class_texts_dict: 类别文本描述字典，例如 {"类别1": "描述1", "类别2": "描述2"}
-        class_texts_file: 类别文本描述JSON文件路径
-    """
-    # 设置设备
-    device = torch.device(f'cuda:{gpu_id}' if torch.cuda.is_available() else 'cpu')
-    print(f"使用设备: {device}")
-    
-    # 创建输出目录
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 保存配置
-    config = {
-        'image_encoder': image_encoder_name,
-        'text_encoder': text_encoder_name,
-        'embed_dim': embed_dim,
-        'batch_size': batch_size,
-        'epochs': epochs,
-        'learning_rate': learning_rate,
-        'weight_decay': weight_decay,
-        'temperature': temperature,
-        'img_size': img_size,
-        'augmentation': augmentation,
-    }
-    with open(output_dir / 'config.json', 'w') as f:
-        json.dump(config, f, indent=2)
-    
-    # 数据增强
-    train_transform, val_transform = get_data_augmentation(augmentation, img_size)
-    
-    # 数据集
-    if text_template is None:
-        text_template = "{class_name}"
-    
-    train_dataset = CLIPDataset(
-        data_dir, 
-        transform=train_transform, 
-        text_template=text_template,
-        class_texts_dict=class_texts_dict,
-        class_texts_file=class_texts_file
-    )
-    class_texts = train_dataset.get_class_texts()
-    
-    # 简单划分训练集和验证集（8:2）
-    try:
-        from sklearn.model_selection import train_test_split
-        indices = list(range(len(train_dataset)))
-        train_indices, val_indices = train_test_split(indices, test_size=0.2, random_state=42, 
-                                                       stratify=[train_dataset.samples[i][1] for i in indices])
-    except:
-        # 如果无法分层，使用随机划分
-        from sklearn.model_selection import train_test_split
-        indices = list(range(len(train_dataset)))
-        train_indices, val_indices = train_test_split(indices, test_size=0.2, random_state=42)
-    
-    from torch.utils.data import Subset
-    train_subset = Subset(train_dataset, train_indices)
-    val_subset = Subset(train_dataset, val_indices)
-    
-    # 创建加权采样器（如果启用）
-    train_sampler = None
-    if use_weighted_sampling:
-        print("\n启用加权采样以处理类别不平衡...")
-        train_sampler, class_weights = create_weighted_sampler(
-            train_dataset, 
-            subset_indices=train_indices,
-            weight_method=weight_method,
-            smooth_factor=weight_smooth_factor
-        )
-        print(f"权重计算方法: {weight_method}")
-        print(f"平滑因子: {weight_smooth_factor}")
-        print("\n各类别权重:")
-        for class_idx, weight in sorted(class_weights.items()):
-            class_name = train_dataset.idx_to_class[class_idx]
-            class_count = sum(1 for i in train_indices if train_dataset.samples[i][1] == class_idx)
-            print(f"  {class_name:25s}: 权重={weight:.4f}, 样本数={class_count}")
-    else:
-        print("\n使用标准随机采样（未启用加权采样）")
-    
-    # 创建DataLoader
-    if train_sampler is not None:
-        # 使用加权采样器时，不能设置shuffle=True
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler,
-                                  num_workers=num_workers, pin_memory=True)
-    else:
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, 
-                                  num_workers=num_workers, pin_memory=True)
-    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False,
-                            num_workers=num_workers, pin_memory=True)
-    
-    # 创建模型
-    print(f"\n创建CLIP模型:")
-    print(f"  图像编码器: {image_encoder_name}")
-    print(f"  文本编码器: {text_encoder_name}")
-    print(f"  嵌入维度: {embed_dim}")
-    
-    model = CLIPModel(
-        image_encoder_name=image_encoder_name,
-        text_encoder_name=text_encoder_name,
-        embed_dim=embed_dim,
-        temperature=temperature
-    ).to(device)
-    
-    # 损失函数
-    criterion = CLIPLoss(temperature=temperature)
-    
-    # 优化器
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    
-    # 学习率调度器
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    
-    # 恢复训练
-    start_epoch = 0
-    best_val_acc = 0.0
-    best_val_loss = float('inf')
-    best_val_mAP = 0.0
-    num_classes = len(train_dataset.class_to_idx)
-    
-    if resume_from:
-        checkpoint = torch.load(resume_from, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        start_epoch = checkpoint['epoch'] + 1
-        best_val_acc = checkpoint.get('best_val_acc', 0.0)
-        best_val_loss = checkpoint.get('best_val_loss', float('inf'))
-        best_val_mAP = checkpoint.get('best_val_mAP', 0.0)
-        print(f"从epoch {start_epoch}恢复训练")
-    
-    # 早停相关变量
-    early_stopping_counter = 0
-    use_early_stopping = early_stopping_patience is not None and early_stopping_patience > 0
-    
-    if use_early_stopping:
-        print(f"\n启用早停策略:")
-        print(f"  监控指标: {early_stopping_monitor}")
-        print(f"  耐心值: {early_stopping_patience}")
-        print(f"  最小改进: {early_stopping_min_delta}")
-    
-    # 训练历史
-    history = {
-        'train_loss': [], 'train_acc': [],
-        'val_loss': [], 'val_acc': [],
-        'val_mAP': []
-    }
-    
-    # 训练循环
-    print(f"\n开始训练...")
-    for epoch in range(start_epoch, epochs):
-        print(f"\n{'='*60}")
-        print(f"Epoch {epoch+1}/{epochs}")
-        print(f"{'='*60}")
-        
-        # 训练
-        train_loss, train_acc = train_epoch(
-            model, train_loader, criterion, optimizer, device, epoch+1, None, use_amp, class_texts
-        )
-        
-        # 更新学习率
-        if scheduler:
-            scheduler.step()
-        
-        # 验证
-        val_loss, val_acc, _, _, val_mAP = validate(
-            model, val_loader, criterion, device, use_amp, class_texts, num_classes
-        )
-        
-        # 记录历史
-        history['train_loss'].append(train_loss)
-        history['train_acc'].append(train_acc)
-        history['val_loss'].append(val_loss)
-        history['val_acc'].append(val_acc)
-        history['val_mAP'].append(val_mAP)
-        
-        # 保存checkpoint
-        checkpoint = {
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'train_loss': train_loss,
-            'train_acc': train_acc,
-            'val_loss': val_loss,
-            'val_acc': val_acc,
-            'val_mAP': val_mAP,
-            'best_val_acc': best_val_acc,
-            'best_val_loss': best_val_loss,
-            'best_val_mAP': best_val_mAP,
-            'config': config,
-            'class_to_idx': train_dataset.class_to_idx,
-            'class_texts': train_dataset.get_class_texts(),
-        }
-        
-        # 保存最新checkpoint
-        torch.save(checkpoint, output_dir / 'checkpoint_latest.pth')
-        
-        # 保存最佳模型（基于mAP）
-        improved = False
-        if val_mAP > best_val_mAP:
-            best_val_mAP = val_mAP
-            checkpoint['best_val_mAP'] = best_val_mAP
-            if save_best:
-                torch.save(checkpoint, output_dir / 'checkpoint_best.pth')
-            print(f"✓ 保存最佳模型 (val_mAP: {val_mAP:.2f}%)")
-        
-        # 更新其他最佳指标
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            checkpoint['best_val_acc'] = best_val_acc
-        
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            checkpoint['best_val_loss'] = best_val_loss
-            improved = True  # 用于早停判断
-        
-        # 早停检查（基于val_loss）
-        if use_early_stopping:
-            if early_stopping_monitor == 'val_loss':
-                # 监控验证损失（越低越好）
-                if val_loss < (best_val_loss - early_stopping_min_delta):
-                    # 损失降低超过阈值，重置计数器
-                    early_stopping_counter = 0
-                else:
-                    # 没有足够改进，增加计数器
-                    early_stopping_counter += 1
-            else:  # val_acc
-                # 监控验证准确率（越高越好）
-                if val_acc > (best_val_acc + early_stopping_min_delta):
-                    early_stopping_counter = 0
-                else:
-                    early_stopping_counter += 1
-            
-            if early_stopping_counter >= early_stopping_patience:
-                print(f"\n早停触发！连续 {early_stopping_patience} 个epoch没有改善")
-                if early_stopping_monitor == 'val_acc':
-                    print(f"当前{early_stopping_monitor}: {val_acc:.2f}%, 最佳{early_stopping_monitor}: {best_val_acc:.2f}%")
-                else:
-                    print(f"当前{early_stopping_monitor}: {val_loss:.4f}, 最佳{early_stopping_monitor}: {best_val_loss:.4f}")
-                break
-        
-        # 保存历史
-        with open(output_dir / 'history.json', 'w') as f:
-            json.dump(history, f, indent=2)
-        
-        print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
-        print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Val mAP: {val_mAP:.2f}%")
-        print(f"Best Val mAP: {best_val_mAP:.2f}%, Best Val Acc: {best_val_acc:.2f}%")
-        if use_early_stopping:
-            print(f"早停计数器: {early_stopping_counter}/{early_stopping_patience}")
-    
-    print(f"\n训练完成！最佳验证mAP: {best_val_mAP:.2f}%, 最佳验证准确率: {best_val_acc:.2f}%")
-    if use_early_stopping:
-        print(f"训练在第 {epoch+1} 个epoch停止（总共 {epochs} 个epoch）")
-    
-    return model, history
+# train_clip_model 函数已删除，只保留交叉验证版本
 
 
 def train_clip_cross_validation(
     data_dir,
     output_dir,
-    image_encoder_name='starnet_dual_pyramid_rcf',
+    image_encoder_name='resnet50',
     text_encoder_name='bert-base-chinese',
+    use_metaclip=False,
+    metaclip_model_name='ViT-B-32-quickgelu',
+    metaclip_pretrained='metaclip_400m',
     embed_dim=512,
     batch_size=32,
     epochs=100,
@@ -801,6 +908,12 @@ def train_clip_cross_validation(
     use_weighted_sampling=False,
     weight_method='inverse_freq',
     weight_smooth_factor=1.0,
+    use_superclip_loss=False,
+    class_loss_weight=1.0,
+    contrastive_loss_weight=1.0,
+    use_focal_loss=False,
+    focal_alpha=0.25,
+    focal_gamma=2.0,
 ):
     """
     使用K折交叉验证训练CLIP模型
@@ -814,6 +927,21 @@ def train_clip_cross_validation(
     """
     from pathlib import Path
     import json
+    import random
+    
+    # 设置全局随机种子（确保可复现性）
+    random.seed(random_state)
+    np.random.seed(random_state)
+    torch.manual_seed(random_state)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(random_state)
+        torch.cuda.manual_seed_all(random_state)
+        # 设置确定性算法（可能略微影响性能，但确保可复现）
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    
+    print(f"随机种子已设置为: {random_state}")
+    print(f"确定性模式: CUDNN deterministic={torch.backends.cudnn.deterministic}, benchmark={torch.backends.cudnn.benchmark}")
     
     # 设置设备
     device = torch.device(f'cuda:{gpu_id}' if torch.cuda.is_available() else 'cpu')
@@ -954,15 +1082,68 @@ def train_clip_cross_validation(
                                 num_workers=num_workers, pin_memory=True)
         
         # 创建模型
-        model = CLIPModel(
-            image_encoder_name=image_encoder_name,
-            text_encoder_name=text_encoder_name,
-            embed_dim=embed_dim,
-            temperature=temperature
-        ).to(device)
+        if fold_num == 1:  # 只在第一个fold打印详细信息
+            print(f"\n创建CLIP模型:")
+            print(f"  图像编码器: {image_encoder_name}")
+            print(f"  文本编码器: {text_encoder_name}")
+            print(f"  嵌入维度: {embed_dim}")
+        
+        # 检查是否使用 MetaCLIP
+        if use_metaclip:
+            if not METACLIP_AVAILABLE:
+                raise ImportError("MetaCLIP is not available. Please install MetaCLIP or set METACLIP_PATH correctly.")
+            
+            print(f"  使用 MetaCLIP 预训练模型: {metaclip_model_name}, pretrained: {metaclip_pretrained}")
+            model = create_metaclip_model(
+                model_name=metaclip_model_name,
+                pretrained=metaclip_pretrained,
+                embed_dim=embed_dim,
+                temperature=temperature,
+                device=device
+            ).to(device)
+        elif image_encoder_name.startswith('metaclip:'):
+            # 通过 image_encoder_name 指定 MetaCLIP
+            if not METACLIP_AVAILABLE:
+                raise ImportError("MetaCLIP is not available. Please install MetaCLIP or set METACLIP_PATH correctly.")
+            
+            # 解析 MetaCLIP 模型名称和预训练权重
+            # 格式: metaclip:ViT-B-32-quickgelu:metaclip_400m
+            parts = image_encoder_name.split(':')
+            if len(parts) >= 2:
+                metaclip_model_name = parts[1]
+                metaclip_pretrained = parts[2] if len(parts) > 2 else 'metaclip_400m'
+            else:
+                raise ValueError(f"Invalid MetaCLIP model name format: {image_encoder_name}. "
+                               f"Expected format: metaclip:ViT-B-32-quickgelu:metaclip_400m")
+            
+            print(f"  使用 MetaCLIP 预训练模型: {metaclip_model_name}, pretrained: {metaclip_pretrained}")
+            model = create_metaclip_model(
+                model_name=metaclip_model_name,
+                pretrained=metaclip_pretrained,
+                embed_dim=embed_dim,
+                temperature=temperature,
+                device=device
+            ).to(device)
+        else:
+            model = CLIPModel(
+                image_encoder_name=image_encoder_name,
+                text_encoder_name=text_encoder_name,
+                embed_dim=embed_dim,
+                temperature=temperature
+            ).to(device)
         
         # 损失函数
-        criterion = CLIPLoss(temperature=temperature)
+        if use_superclip_loss:
+            criterion = SuperCLIPLoss(
+                temperature=temperature,
+                class_loss_weight=class_loss_weight,
+                contrastive_loss_weight=contrastive_loss_weight,
+                use_focal_loss=use_focal_loss,
+                focal_alpha=focal_alpha,
+                focal_gamma=focal_gamma
+            )
+        else:
+            criterion = CLIPLoss(temperature=temperature)
         
         # 优化器
         optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -995,22 +1176,54 @@ def train_clip_cross_validation(
         if use_early_stopping:
             print(f"Fold {fold_num} 启用早停策略 (耐心值: {early_stopping_patience})")
         
+        # 计算类别统计信息（用于 SuperCLIP 损失的重加权）
+        class_counts = None
+        total_samples = None
+        if use_superclip_loss:
+            from collections import Counter
+            subset_labels = [full_dataset.samples[i][1] for i in train_indices]
+            class_counts = Counter(subset_labels)
+            total_samples = len(subset_labels)
+            print(f"\n类别统计信息（用于重加权）:")
+            for class_idx, count in sorted(class_counts.items()):
+                class_name = full_dataset.idx_to_class[class_idx]
+                print(f"  {class_name}: {count} 个样本")
+        
         # 训练循环
         for epoch in range(epochs):
             print(f"\nFold {fold_num}, Epoch {epoch+1}/{epochs}")
             
             # 训练
-            train_loss, train_acc = train_epoch(
-                model, train_loader, criterion, optimizer, device, epoch+1, use_amp, class_texts
+            train_result = train_epoch(
+                model, train_loader, criterion, optimizer, device, epoch+1, use_amp, 
+                class_texts, use_superclip_loss, class_counts, total_samples, num_classes, weight_smooth_factor
             )
+            
+            if isinstance(train_result, dict):
+                train_loss = train_result['loss']
+                train_acc = train_result['acc']
+                train_class_loss = train_result.get('class_loss', 0.0)
+                train_contrastive_loss = train_result.get('contrastive_loss', 0.0)
+            else:
+                train_loss, train_acc = train_result
+                train_class_loss = 0.0
+                train_contrastive_loss = 0.0
             
             # 更新学习率
             scheduler.step()
             
             # 验证
-            val_loss, val_acc, all_predictions, all_labels, val_mAP = validate(
-                model, val_loader, criterion, device, use_amp, class_texts, num_classes
+            val_result = validate(
+                model, val_loader, criterion, device, use_amp, class_texts, num_classes,
+                use_superclip_loss, class_counts, total_samples, weight_smooth_factor
             )
+            
+            if use_superclip_loss and len(val_result) > 5:
+                val_loss, val_acc, all_predictions, all_labels, val_mAP, val_class_loss, val_contrastive_loss = val_result
+            else:
+                val_loss, val_acc, all_predictions, all_labels, val_mAP = val_result[:5]
+                val_class_loss = 0.0
+                val_contrastive_loss = 0.0
             
             # 计算详细指标（每个epoch都计算）
             val_precision = val_mAP  # 默认使用mAP作为precision
@@ -1036,6 +1249,18 @@ def train_clip_cross_validation(
             history['val_precision'].append(val_precision)
             history['val_recall'].append(val_recall)
             history['val_f1'].append(val_f1)
+            
+            # 如果使用 SuperCLIP 损失，记录分类损失和对比损失
+            if use_superclip_loss:
+                if 'train_class_loss' not in history:
+                    history['train_class_loss'] = []
+                    history['train_contrastive_loss'] = []
+                    history['val_class_loss'] = []
+                    history['val_contrastive_loss'] = []
+                history['train_class_loss'].append(train_class_loss)
+                history['train_contrastive_loss'].append(train_contrastive_loss)
+                history['val_class_loss'].append(val_class_loss)
+                history['val_contrastive_loss'].append(val_contrastive_loss)
             
             # 保存checkpoint
             checkpoint = {
@@ -1117,8 +1342,12 @@ def train_clip_cross_validation(
             with open(fold_dir / 'history.json', 'w') as f:
                 json.dump(history, f, indent=2)
             
-            print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
-            print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Val mAP: {val_mAP:.2f}%")
+            if use_superclip_loss:
+                print(f"Train Loss: {train_loss:.4f} (Class: {train_class_loss:.4f}, Contrastive: {train_contrastive_loss:.4f}), Train Acc: {train_acc:.2f}%")
+                print(f"Val Loss: {val_loss:.4f} (Class: {val_class_loss:.4f}, Contrastive: {val_contrastive_loss:.4f}), Val Acc: {val_acc:.2f}%, Val mAP: {val_mAP:.2f}%")
+            else:
+                print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+                print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Val mAP: {val_mAP:.2f}%")
             print(f"Best Val mAP: {best_val_mAP:.2f}%, Best Val Acc: {best_val_acc:.2f}%")
             if use_early_stopping:
                 print(f"早停计数器: {early_stopping_counter}/{early_stopping_patience}")
@@ -1287,7 +1516,7 @@ def train_multiple_configs(data_dir, output_base_dir, configs):
                 train_params = {
                     'data_dir': data_dir,
                     'output_dir': output_dir,
-                    'image_encoder_name': config.get('image_encoder_name', config.get('image_encoder', 'starnet_dual_pyramid_rcf')),
+                    'image_encoder_name': config.get('image_encoder_name', config.get('image_encoder', 'resnet50')),
                     'text_encoder_name': config.get('text_encoder_name', config.get('text_encoder', 'bert-base-chinese')),
                     'embed_dim': config.get('embed_dim', 512),
                     'batch_size': config.get('batch_size', 32),
@@ -1302,8 +1531,21 @@ def train_multiple_configs(data_dir, output_base_dir, configs):
                     'gpu_id': config.get('gpu_id', 0),
                 }
                 
+                # 提取 SuperCLIP 损失参数
+                superclip_loss_params = {
+                    'use_superclip_loss': config.get('use_superclip_loss', False),
+                    'class_loss_weight': config.get('class_loss_weight', 1.0),
+                    'contrastive_loss_weight': config.get('contrastive_loss_weight', 1.0),
+                    'use_focal_loss': config.get('use_focal_loss', False),
+                    'focal_alpha': config.get('focal_alpha', 0.25),
+                    'focal_gamma': config.get('focal_gamma', 2.0),
+                }
+                
                 # 合并所有参数（确保不包含use_cv等不需要的参数）
-                all_params = {**train_params, **cv_params, **early_stopping_params, **text_params, **weighted_sampling_params}
+                all_params = {**train_params, **cv_params, **early_stopping_params, **text_params, **weighted_sampling_params, **superclip_loss_params}
+                
+                # 移除任何可能存在的use_cv参数（虽然应该不会出现，但为了安全）
+                all_params.pop('use_cv', None)
                 
                 # 移除任何可能存在的use_cv参数（虽然应该不会出现，但为了安全）
                 all_params.pop('use_cv', None)
@@ -1319,7 +1561,9 @@ def train_multiple_configs(data_dir, output_base_dir, configs):
                     train_config['weight_method'] = 'inverse_freq'
                 if 'weight_smooth_factor' not in train_config:
                     train_config['weight_smooth_factor'] = 1.0
-                train_clip_model(data_dir=data_dir, output_dir=output_dir, **train_config)
+                # 单配置训练已删除，只支持交叉验证
+                print("单配置训练已删除，请使用交叉验证模式 (--use-cv)")
+                continue
         except Exception as e:
             print(f"✗ 配置训练失败: {e}")
             import traceback
@@ -1335,10 +1579,16 @@ if __name__ == "__main__":
     parser.add_argument('--output-dir', type=str, required=True, help='输出目录')
     
     # 模型参数
-    parser.add_argument('--image-encoder', type=str, default='starnet_dual_pyramid_rcf',
-                       help='图像编码器名称')
+    parser.add_argument('--image-encoder', type=str, default='resnet50',
+                       help='图像编码器名称。使用 MetaCLIP: metaclip:ViT-B-32-quickgelu:metaclip_400m')
     parser.add_argument('--text-encoder', type=str, default='bert-base-chinese',
-                       help='文本编码器名称')
+                       help='文本编码器名称（使用 MetaCLIP 时会被忽略）')
+    parser.add_argument('--use-metaclip', action='store_true',
+                       help='使用 MetaCLIP 预训练模型（替代 --image-encoder）')
+    parser.add_argument('--metaclip-model', type=str, default='ViT-B-32-quickgelu',
+                       help='MetaCLIP 模型名称（仅在 --use-metaclip 时使用）')
+    parser.add_argument('--metaclip-pretrained', type=str, default='metaclip_400m',
+                       help='MetaCLIP 预训练权重标识（仅在 --use-metaclip 时使用）')
     parser.add_argument('--embed-dim', type=int, default=512, help='嵌入维度')
     parser.add_argument('--temperature', type=float, default=0.07, help='温度参数')
     
@@ -1387,6 +1637,22 @@ if __name__ == "__main__":
                        help='权重计算方法：inverse_freq（逆频率，默认）、inverse_sqrt（逆平方根频率）、balanced（平衡，同inverse_freq）')
     parser.add_argument('--weight-smooth-factor', type=float, default=1.0,
                        help='权重平滑因子，用于避免权重过大（默认1.0）')
+    
+    # SuperCLIP 损失参数
+    parser.add_argument('--use-superclip-loss', action='store_true',
+                       help='使用 SuperCLIP 损失函数（结合分类损失和对比损失）')
+    parser.add_argument('--class-loss-weight', type=float, default=1.0,
+                       help='分类损失权重（默认1.0）')
+    parser.add_argument('--contrastive-loss-weight', type=float, default=1.0,
+                       help='对比损失权重（默认1.0）')
+    
+    # Focal Loss 参数（用于分类损失）
+    parser.add_argument('--use-focal-loss', action='store_true',
+                       help='使用 Focal Loss 作为分类损失（默认False，使用加权交叉熵）')
+    parser.add_argument('--focal-alpha', type=float, default=0.25,
+                       help='Focal Loss 的 alpha 参数（默认0.25）')
+    parser.add_argument('--focal-gamma', type=float, default=2.0,
+                       help='Focal Loss 的 gamma 参数（默认2.0）')
     
     # 多配置训练
     parser.add_argument('--multi-config', action='store_true', help='使用多配置训练模式')
@@ -1440,6 +1706,9 @@ if __name__ == "__main__":
                 output_dir=args.output_dir,
                 image_encoder_name=args.image_encoder,
                 text_encoder_name=args.text_encoder,
+                use_metaclip=args.use_metaclip,
+                metaclip_model_name=args.metaclip_model,
+                metaclip_pretrained=args.metaclip_pretrained,
                 embed_dim=args.embed_dim,
                 batch_size=args.batch_size,
                 epochs=args.epochs,
@@ -1462,34 +1731,15 @@ if __name__ == "__main__":
                 use_weighted_sampling=args.use_weighted_sampling,
                 weight_method=args.weight_method,
                 weight_smooth_factor=args.weight_smooth_factor,
+                use_superclip_loss=args.use_superclip_loss,
+                class_loss_weight=args.class_loss_weight,
+                contrastive_loss_weight=args.contrastive_loss_weight,
+                use_focal_loss=args.use_focal_loss,
+                focal_alpha=args.focal_alpha,
+                focal_gamma=args.focal_gamma,
             )
         else:
-            # 普通训练模式
-            train_clip_model(
-                data_dir=args.data_dir,
-                output_dir=args.output_dir,
-                image_encoder_name=args.image_encoder,
-                text_encoder_name=args.text_encoder,
-                embed_dim=args.embed_dim,
-                batch_size=args.batch_size,
-                epochs=args.epochs,
-                learning_rate=args.learning_rate,
-                weight_decay=args.weight_decay,
-                temperature=args.temperature,
-                img_size=args.img_size,
-                augmentation=args.augmentation,
-                num_workers=args.num_workers,
-                use_amp=not args.no_amp,
-                gpu_id=args.gpu_id,
-                resume_from=args.resume_from,
-                save_best=not args.no_save_best,
-                early_stopping_patience=args.early_stopping_patience,
-                early_stopping_min_delta=args.early_stopping_min_delta,
-                early_stopping_monitor=args.early_stopping_monitor,
-                text_template=args.text_template,
-                class_texts_file=args.class_texts_file,
-                use_weighted_sampling=args.use_weighted_sampling,
-                weight_method=args.weight_method,
-                weight_smooth_factor=args.weight_smooth_factor,
-            )
+            # 普通训练模式已删除，只支持交叉验证
+            print("错误：单配置训练模式已删除，请使用交叉验证模式 (--use-cv)")
+            sys.exit(1)
 
