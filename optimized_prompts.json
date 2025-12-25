@@ -1,0 +1,891 @@
+{
+  "class_names": [
+    "Acetabular Loosening",
+    "Dislocation",
+    "Fracture",
+    "Good Place",
+    "Infection",
+    "Native Hip",
+    "Spacer",
+    "Stem Loosening",
+    "Wear"
+  ],
+  "prompts": {
+    "Acetabular Loosening": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+    "Dislocation": "A dislocated hip prosthesis: the femoral head component is completely displaced from the acetabular cup, creating a non-anatomic gap. The femoral and pelvic bones are intact, without the cortical disruption or angulation characteristic of a fracture.",
+    "Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+    "Good Place": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+    "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+    "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+    "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+    "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+    "Wear": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant."
+  },
+  "best_accuracy": 0.7770897832817337,
+  "optimization_history": [
+    {
+      "round": 1,
+      "class": "Good Place",
+      "old_desc": "A well-fixed hip prosthesis in anatomic alignment, characterized by uniform periprosthetic bone density, smooth cortical margins, and normal soft tissue planes—lacking the irregular osteolysis, periosteal reaction, or soft tissue swelling indicative of infection.",
+      "new_desc": "A well-fixed hip prosthesis with uniform bone density, smooth cortical margins, and no signs of wear debris, osteolysis, or periprosthetic bone resorption.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 2,
+      "class": "Good Place",
+      "old_desc": "A well-fixed hip prosthesis in anatomic alignment, characterized by uniform periprosthetic bone density, smooth cortical margins, and normal soft tissue planes—lacking the irregular osteolysis, periosteal reaction, or soft tissue swelling indicative of infection.",
+      "new_desc": "A well-positioned, stable hip prosthesis. The surrounding bone is uniformly dense with sharp, intact cortical lines. Crucially, there is no visible wear debris cloud, no periprosthetic lucency or bone loss, and no asymmetric joint space narrowing.",
+      "result": "failed",
+      "improvement": -0.049535603715170295
+    },
+    {
+      "round": 3,
+      "class": "Good Place",
+      "old_desc": "A well-fixed hip prosthesis in anatomic alignment, characterized by uniform periprosthetic bone density, smooth cortical margins, and normal soft tissue planes—lacking the irregular osteolysis, periosteal reaction, or soft tissue swelling indicative of infection.",
+      "new_desc": "A hip prosthesis in anatomic alignment with uniform periprosthetic bone density and smooth, uninterrupted cortical margins. There is an absence of the particulate debris, focal bone resorption, and asymmetric joint space narrowing that characterize wear.",
+      "result": "failed",
+      "improvement": -0.003095975232198178
+    },
+    {
+      "round": 4,
+      "class": "Good Place",
+      "old_desc": "A well-fixed hip prosthesis in anatomic alignment, characterized by uniform periprosthetic bone density, smooth cortical margins, and normal soft tissue planes—lacking the irregular osteolysis, periosteal reaction, or soft tissue swelling indicative of infection.",
+      "new_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "result": "success",
+      "improvement": 0.006191950464396245
+    },
+    {
+      "round": 5,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A hip prosthesis in correct alignment, with a stable bone-implant interface. Key features are uniform periprosthetic bone density, a sharp and continuous cortical line, and a preserved, symmetric joint space—showing none of the focal osteolysis or debris seen in wear.",
+      "result": "failed",
+      "improvement": -0.012383900928792602
+    },
+    {
+      "round": 6,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable, well-aligned hip prosthesis. The periprosthetic bone appears uniformly dense, with a sharp and continuous cortical margin, and the joint space is preserved and symmetric. There is no evidence of wear debris, focal osteolysis, or abnormal bone resorption.",
+      "result": "failed",
+      "improvement": -0.0619195046439629
+    },
+    {
+      "round": 7,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-fixed hip prosthesis in anatomic position. The surrounding bone is uniformly dense with a sharp, uninterrupted cortex. Unlike wear, there is no particulate debris, periprosthetic lucency, or asymmetric joint space.",
+      "result": "failed",
+      "improvement": -0.037151702786377694
+    },
+    {
+      "round": 8,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A hip prosthesis demonstrating stable osseointegration. Radiographically, this is defined by uniform bone density at the interface, a sharply defined and continuous cortical margin, and a symmetrically maintained joint space. No evidence of wear debris or focal bone loss is present.",
+      "result": "failed",
+      "improvement": -0.04024767801857587
+    },
+    {
+      "round": 9,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A hip prosthesis with stable fixation, characterized by uniform periprosthetic bone density and a sharp, continuous cortical margin. The joint space is symmetric and preserved, distinctly lacking the lucent lines, debris, or focal osteolysis indicative of wear.",
+      "result": "failed",
+      "improvement": -0.037151702786377694
+    },
+    {
+      "round": 10,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-aligned hip prosthesis with stable bonding to the bone. The key radiographic findings are a uniform, dense bone-prosthesis interface with a sharp cortical outline and a symmetric joint space, showing no signs of wear-induced debris or focal bone loss.",
+      "result": "failed",
+      "improvement": -0.04643962848297212
+    },
+    {
+      "round": 11,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable hip prosthesis in anatomic alignment. The periprosthetic bone shows uniform density and a sharply defined, continuous cortical margin. The joint space is symmetric, with no radiographic evidence of particulate debris, focal osteolysis, or abnormal lucency.",
+      "result": "failed",
+      "improvement": -0.0619195046439629
+    },
+    {
+      "round": 12,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A hip prosthesis with stable fixation and correct alignment. The surrounding bone displays uniform density with a distinct, unbroken cortical line. The joint space is preserved and symmetric, clearly lacking the debris, focal bone loss, or narrowing that defines wear.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 13,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A radiographically normal hip prosthesis. It is well-fixed, with uniform periprosthetic bone density, a sharp and uninterrupted cortical interface, and a symmetric, well-maintained joint space. There is no evidence of wear debris or focal osteolysis.",
+      "result": "failed",
+      "improvement": -0.04643962848297212
+    },
+    {
+      "round": 14,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable, well-positioned hip prosthesis. The radiographic hallmarks are uniform bone density around the implant, a sharp and continuous cortical bone margin, and a symmetric, normal joint space—none of the particulate debris, focal lucencies, or bone loss seen in wear.",
+      "result": "failed",
+      "improvement": -0.05572755417956654
+    },
+    {
+      "round": 15,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "Radiographic signs of a loose femoral stem, characterized by a radiolucent line (gap) at the bone-implant interface, subsidence, or migration of the component. This contrasts with the sharp, discontinuous cortical break seen in a fracture.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 16,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A loose femoral stem appears as a radiolucent gap or line at the bone-implant interface, often with component subsidence or tilt. Unlike a fracture, there is no complete break or angulation of the surrounding cortical bone.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 17,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A femoral stem showing a radiolucent line or zone at its interface with the bone, possibly with subsidence or a change in position. The surrounding cortical bone remains continuous, without the sharp break or displacement seen in a fracture.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 18,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A femoral stem that is no longer well-fixed, evidenced by a thin radiolucent line (gap) surrounding the implant or by its subsidence into the bone. The key difference from a fracture is the intact, continuous cortex around the stem.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 19,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "Loosening of the femoral stem is indicated by a lucent zone or line along the bone-prosthesis interface, with possible subsidence or tilt of the component. Unlike a fracture, the surrounding femoral cortex remains intact and unbroken.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 20,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A loose femoral stem shows a radiolucent line or gap surrounding the implant, often with subsidence or tilt. The femoral cortex itself is continuous and not fractured; the problem is at the interface between the bone and the prosthesis.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 21,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A femoral stem with radiographic signs of loosening: a lucent line at the bone-implant interface, subsidence, or component migration. This is distinct from a fracture, where the cortical bone itself is fractured, angulated, or displaced.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 22,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "Evidence of a loose femoral stem, seen as a radiolucent line between the metal and bone, or as subsidence/migration of the stem. The surrounding femoral cortex remains intact and continuous, unlike the sharp break seen in a periprosthetic fracture.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 23,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "A loosening femoral stem is characterized by a radiolucent gap at the cement-bone or implant-bone interface, often with component subsidence. The key distinction from a fracture is that the femoral cortical bone itself is not broken or displaced.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 24,
+      "class": "Stem Loosening",
+      "old_desc": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+      "new_desc": "The femoral stem shows signs of loosening, evident as a thin radiolucent line surrounding it or by its subsidence within the bone canal. The surrounding cortical bone remains intact, without the sharp cortical discontinuity or angulation of a fracture.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 25,
+      "class": "Wear",
+      "old_desc": "Wear debris is present around the prosthetic components, accompanied by adjacent bone resorption or asymmetric joint space narrowing consistent with prosthesis wear and potential osteolysis.",
+      "new_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "result": "success",
+      "improvement": 0.006191950464396245
+    },
+    {
+      "round": 26,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Radiographic signs of prosthesis wear. Asymmetric joint space narrowing is present, with adjacent periprosthetic lucent zones (osteolysis) indicating bone resorption. Wear debris may appear as particulate opacities. This differs from a stable implant's uniform bone density and symmetric joint space.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 27,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Radiographic evidence of prosthesis wear. This is characterized by asymmetric narrowing of the joint space and focal, scalloped lucencies (osteolysis) in the adjacent bone, often with visible particulate debris. A stable implant lacks these features.",
+      "result": "failed",
+      "improvement": -0.01238390092879249
+    },
+    {
+      "round": 28,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Radiographic signs of prosthesis wear, showing asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis) adjacent to the components. Wear-derived particulate debris may be seen. This contrasts with the uniform density and symmetric joint space of a stable prosthesis.",
+      "result": "failed",
+      "improvement": -0.021671826625386914
+    },
+    {
+      "round": 29,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "A worn hip prosthesis, characterized by an asymmetrically narrowed joint space and focal, scalloped areas of bone loss (osteolysis) near the components, often with particulate debris. This is distinct from the uniform bone density and symmetric joint of a stable implant.",
+      "result": "failed",
+      "improvement": -0.003095975232198067
+    },
+    {
+      "round": 30,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Radiographic evidence of prosthesis wear. Key findings are an asymmetrically narrowed joint space and focal, scalloped lucencies (osteolysis) in the adjacent bone, often with visible particulate debris. This differs from the uniform bone density and smooth cortical margins of a well-fixed implant.",
+      "result": "failed",
+      "improvement": -0.018575851393188847
+    },
+    {
+      "round": 31,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "A hip prosthesis showing wear, evident by asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis) adjacent to the implant. Particulate wear debris may be present. This contrasts with the uniform density and symmetric joint of a stable prosthesis.",
+      "result": "failed",
+      "improvement": -0.049535603715170184
+    },
+    {
+      "round": 32,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Evidence of prosthesis wear: an asymmetrically narrowed joint space and scalloped, focal lucencies (osteolysis) in the bone adjacent to the implant, often with particulate debris. This is visually distinct from the uniform bone density and symmetric joint space of a well-fixed prosthesis.",
+      "result": "failed",
+      "improvement": -0.018575851393188847
+    },
+    {
+      "round": 33,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "A hip prosthesis with radiographic evidence of wear: an asymmetrically narrowed joint space and erosive, focal areas of bone loss (osteolysis) adjacent to the components, often accompanied by particulate debris. This pattern of focal destruction contrasts with the uniform, dense bone and symmetric joint of a well-fixed, stable prosthesis.",
+      "result": "failed",
+      "improvement": -0.003095975232198067
+    },
+    {
+      "round": 34,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "Radiographic evidence of prosthesis wear, characterized by asymmetric joint space narrowing and focal, scalloped lucencies (osteolysis) in the periprosthetic bone, often with particulate debris. This focal bone destruction and asymmetry contrasts with the uniform density and symmetric joint of a stable implant.",
+      "result": "failed",
+      "improvement": -0.018575851393188847
+    },
+    {
+      "round": 35,
+      "class": "Wear",
+      "old_desc": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant.",
+      "new_desc": "A worn hip prosthesis, showing asymmetric narrowing of the prosthetic joint space and focal, scalloped areas of bone loss (osteolysis) adjacent to the components. Wear-derived particulate debris may be visible. This is distinct from the uniform bone density and symmetric joint space seen in a well-fixed, stable prosthesis.",
+      "result": "failed",
+      "improvement": -0.030959752321981338
+    },
+    {
+      "round": 36,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup is indicated by a radiolucent line or gap at the bone-implant or cement-bone interface, often with component migration or tilt. Unlike a fracture, the surrounding pelvic bone remains intact without a sharp cortical break or displacement.",
+      "result": "failed",
+      "improvement": -0.08978328173374606
+    },
+    {
+      "round": 37,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup shows a radiolucent line or zone at its interface with the pelvic bone, possibly with migration or tilt. The surrounding pelvic bone is continuous and not fractured, contrasting with the sharp cortical break of a periprosthetic fracture.",
+      "result": "failed",
+      "improvement": -0.09287925696594423
+    },
+    {
+      "round": 38,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "Evidence of acetabular cup loosening, seen as a radiolucent line between the cup and the pelvic bone, often with migration or a change in position. The pelvic bone itself is not fractured; the pathology is at the interface, unlike a fracture which involves a break in the cortical bone.",
+      "result": "failed",
+      "improvement": -0.04334365325077394
+    },
+    {
+      "round": 39,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "Acetabular cup loosening appears as a radiolucent gap or line surrounding the cup within the acetabulum, often with component migration. The surrounding pelvic bone remains intact, without the sharp cortical discontinuity or angulation characteristic of a fracture.",
+      "result": "failed",
+      "improvement": -0.04334365325077394
+    },
+    {
+      "round": 40,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup is characterized by a radiolucent line at the bone-implant interface and/or migration of the component. The pelvic bone remains structurally continuous, contrasting with the sharp cortical break and displacement of a periprosthetic fracture.",
+      "result": "failed",
+      "improvement": -0.09597523219814241
+    },
+    {
+      "round": 41,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "Radiographic signs of a loose acetabular cup: a lucent line or zone at the bone-cup interface, often with component migration or tilt. The pelvic bone is intact, lacking the sharp cortical discontinuity and angulation that defines a fracture.",
+      "result": "failed",
+      "improvement": -0.08978328173374606
+    },
+    {
+      "round": 42,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "The acetabular cup shows loosening, evidenced by a radiolucent line or gap at the bone-implant interface and possible migration. The surrounding pelvic bone is intact and continuous, unlike a fracture which shows a sharp cortical break with angulation or displacement.",
+      "result": "failed",
+      "improvement": -0.04334365325077394
+    },
+    {
+      "round": 43,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup presents as a thin radiolucent line surrounding the component within the acetabulum, often with migration. The pelvic bone remains intact and unfractured, distinguishing it from the sharp cortical discontinuity of a fracture.",
+      "result": "failed",
+      "improvement": -0.04024767801857576
+    },
+    {
+      "round": 44,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "Acetabular cup loosening is indicated by a radiolucent line or gap at the bone-cup interface and/or migration of the component. The surrounding pelvic bone is structurally intact, contrasting with the sharp cortical break, angulation, or displacement of a periprosthetic fracture.",
+      "result": "failed",
+      "improvement": -0.04334365325077394
+    },
+    {
+      "round": 45,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup, characterized by a radiolucent line at its interface with the pelvic bone and potential migration. The surrounding bone is intact and continuous, without the sharp cortical break or deformity seen in a periprosthetic fracture.",
+      "result": "failed",
+      "improvement": -0.09597523219814241
+    },
+    {
+      "round": 46,
+      "class": "Dislocation",
+      "old_desc": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+      "new_desc": "A dislocated hip prosthesis, where the prosthetic femoral head is completely displaced from the acetabular cup, resulting in a non-congruent joint. The surrounding bones are intact, without the cortical discontinuity or angulation seen in a fracture.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 47,
+      "class": "Dislocation",
+      "old_desc": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+      "new_desc": "A dislocated hip prosthesis: the prosthetic femoral head is completely out of the acetabular cup, creating a clear separation. The femoral and pelvic bones themselves are intact and not fractured; the issue is the malposition of the prosthetic components.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 48,
+      "class": "Dislocation",
+      "old_desc": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+      "new_desc": "A dislocated hip prosthesis shows the femoral head completely displaced from the acetabular cup, with a clear gap between the components. Both the femur and pelvis are structurally intact, lacking the cortical break seen in a fracture.",
+      "result": "failed",
+      "improvement": -0.049535603715170184
+    },
+    {
+      "round": 49,
+      "class": "Dislocation",
+      "old_desc": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+      "new_desc": "A dislocated hip prosthesis, with the prosthetic femoral head completely separated and displaced from the acetabular socket. The surrounding bones (femur and pelvis) are intact and show no fracture lines, angulation, or cortical discontinuity.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 50,
+      "class": "Dislocation",
+      "old_desc": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+      "new_desc": "A dislocated hip prosthesis: the femoral head component is completely displaced from the acetabular cup, creating a non-anatomic gap. The femoral and pelvic bones are intact, without the cortical disruption or angulation characteristic of a fracture.",
+      "result": "success",
+      "improvement": 0.003095975232198178
+    },
+    {
+      "round": 51,
+      "class": "Acetabular Loosening",
+      "old_desc": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+      "new_desc": "A loose acetabular cup is characterized by a thin, linear radiolucent gap at the bone-implant interface and/or migration of the component. This is distinct from wear, which shows asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "success",
+      "improvement": 0.015479876160990669
+    },
+    {
+      "round": 52,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup is characterized by a thin, linear radiolucent gap at the bone-implant interface and/or migration of the component. This is distinct from wear, which shows asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "new_desc": "Acetabular cup loosening: a thin, continuous radiolucent line or gap at the bone-cup interface, often with component migration. This differs from wear, which is characterized by asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.015479876160990669
+    },
+    {
+      "round": 53,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup is characterized by a thin, linear radiolucent gap at the bone-implant interface and/or migration of the component. This is distinct from wear, which shows asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "new_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "result": "success",
+      "improvement": 0.006191950464396356
+    },
+    {
+      "round": 54,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "new_desc": "Loosening of the acetabular cup is evidenced by a thin, linear radiolucent gap surrounding the component, often with migration. This contrasts with wear, which is characterized by asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.07739938080495357
+    },
+    {
+      "round": 55,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "new_desc": "Acetabular cup loosening presents as a thin, uniform radiolucent line at the bone-cup interface, often with component migration. This linear interface pathology differs from wear, which shows asymmetric joint space narrowing and focal, erosive osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.021671826625387025
+    },
+    {
+      "round": 56,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "new_desc": "A loose acetabular cup shows a thin, continuous radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which is characterized by asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with particulate debris.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 57,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "new_desc": "Acetabular cup loosening is characterized by a thin, uniform radiolucent line at the bone-prosthesis interface, often with component migration. This differs from wear, which presents with asymmetric joint space narrowing and scalloped, focal areas of osteolysis (bone loss), often with visible particulate debris.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 58,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup appears as a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped areas of bone loss (osteolysis), often with visible particulate debris.",
+      "new_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "result": "success",
+      "improvement": 0.006191950464396245
+    },
+    {
+      "round": 59,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is defined by a thin, continuous radiolucent line at the bone-implant interface, often with component migration. This differs from wear, which manifests as asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.003095975232198067
+    },
+    {
+      "round": 60,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Acetabular cup loosening: a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a uniform interface finding, contrasting with wear's asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 61,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup shows a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 62,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Acetabular cup loosening is characterized by a thin, uniform radiolucent line at the bone-implant interface, often with component migration. This linear interface finding contrasts with wear, which shows asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 63,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup presents as a thin, continuous radiolucent line at the bone-implant interface, often with migration. This linear interface pathology differs from wear, which is characterized by asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 64,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is evidenced by a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which manifests as asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 65,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is characterized by a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.015479876160990669
+    },
+    {
+      "round": 66,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is defined by a thin, continuous radiolucent line at the bone-implant interface, often with migration. This differs from wear, which manifests as asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.006191950464396245
+    },
+    {
+      "round": 67,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Acetabular cup loosening: a thin, uniform radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and scalloped, focal osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": -0.021671826625387025
+    },
+    {
+      "round": 68,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup shows a thin, linear radiolucent line at the bone-implant interface, often with migration. This is distinct from wear, which presents with asymmetric joint space narrowing and focal, scalloped osteolytic lesions, often with particulate debris.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 69,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Evidence of periprosthetic joint infection, including aggressive, irregular osteolysis, periosteal new bone formation (periosteal reaction), and soft tissue swelling or fluid collections. This aggressive destruction and reactive change contrast sharply with the uniform bone density and smooth cortical margins of a well-fixed, stable prosthesis.",
+      "result": "failed",
+      "improvement": -0.006191950464396245
+    },
+    {
+      "round": 70,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Radiographic signs of infection: aggressive, irregular osteolysis, periosteal reaction (new bone formation), and soft tissue swelling or fluid collections. These features of destructive inflammation differ from the uniform bone density and smooth cortical margins of a stable, well-fixed prosthesis.",
+      "result": "failed",
+      "improvement": -0.006191950464396245
+    },
+    {
+      "round": 71,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Signs of periprosthetic infection: aggressive, irregular bone destruction (osteolysis), periosteal reaction (laminated new bone), and soft tissue swelling. This pattern of destructive inflammation contrasts with the uniform bone density and smooth cortical margins of a stable, well-fixed prosthesis.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 72,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Evidence of periprosthetic joint infection, characterized by aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling. This destructive pattern differs from the uniform bone density and smooth cortical interface of a stable implant.",
+      "result": "failed",
+      "improvement": -0.012383900928792602
+    },
+    {
+      "round": 73,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Radiographic evidence of infection: aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling or fluid. This destructive, reactive pattern contrasts with the uniform bone density and smooth cortical margins of a stable, well-fixed prosthesis.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 74,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Periprosthetic infection is indicated by aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling/fluid. This destructive inflammation contrasts with the uniform bone density and smooth cortical margins of a stable implant.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 75,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Infection around a hip prosthesis shows aggressive, irregular bone destruction (osteolysis), periosteal reaction (laminated new bone), and soft tissue swelling. This destructive pattern differs from the uniform bone density and smooth cortical margins of a stable, well-fixed implant.",
+      "result": "failed",
+      "improvement": -0.006191950464396245
+    },
+    {
+      "round": 76,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Radiographic signs of periprosthetic infection: aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling/fluid. This destructive and reactive pattern contrasts with the uniform density and smooth cortical margins of a stable prosthesis.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 77,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Evidence of periprosthetic joint infection, including aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling. This destructive inflammatory pattern is distinct from the uniform bone density and smooth cortical interface of a stable, well-fixed prosthesis.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 78,
+      "class": "Infection",
+      "old_desc": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+      "new_desc": "Periprosthetic infection presents with aggressive, irregular osteolysis, periosteal reaction (laminated new bone), and soft tissue swelling/fluid. This destructive, reactive pattern contrasts with the uniform bone density and smooth cortical margins of a stable implant.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 79,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup appears as a thin radiolucent line or gap at the bone-implant interface, often with migration of the solid component. This is distinct from a temporary antibiotic spacer, which is a monolithic cement construct without a well-defined bone-implant interface and is not a permanent, articulating prosthesis.",
+      "result": "failed",
+      "improvement": -0.03095975232198145
+    },
+    {
+      "round": 80,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is a failed permanent component, showing a thin radiolucent line at its interface with the bone, often with migration. This contrasts with a temporary spacer, which is a solid, non-articulating cement construct placed during revision surgery.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 81,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup, a permanent metal or polyethylene component, shows a thin radiolucent line at the bone-implant interface, often with migration. This is distinct from a temporary spacer, which is a solid, bulky cement construct without a distinct bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 82,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup presents as a thin radiolucent line at the bone-implant interface, often with migration of the distinct, articulating component. This differs from a spacer, which is a bulky, non-anatomic cement mass without a defined bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 83,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is a permanent, articulating prosthesis showing a thin radiolucent line at its bone interface, often with migration. This is distinct from a temporary antibiotic spacer, which is a solid, non-anatomic cement mass without a distinct bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.03095975232198145
+    },
+    {
+      "round": 84,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Loosening of a permanent acetabular cup, evidenced by a thin radiolucent line at the bone-implant interface and component migration. This is distinct from a temporary cement spacer, a bulky, non-articulating mass without a defined bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.06811145510835914
+    },
+    {
+      "round": 85,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose, permanent acetabular cup shows a thin radiolucent line at its interface with bone, often with migration. This is distinct from a temporary antibiotic spacer, which is a bulky, non-articulating cement mass without a defined bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 86,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup, identified by a thin radiolucent line at the bone-implant interface and potential migration. This is a failing permanent component, contrasting with a temporary spacer: a bulky, non-articulating cement mass without a distinct bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 87,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup shows a thin radiolucent line at the bone-implant interface, often with migration. This is a failing permanent prosthesis, distinct from a temporary antibiotic spacer, which is a bulky, non-articulating cement mass without a defined bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 88,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup, evidenced by a thin radiolucent line at its interface with bone and potential migration. This is a failing permanent, articulating component. It is distinct from a temporary antibiotic spacer: a solid, non-articulating cement mass without a defined bone-implant interface.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 89,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A radiographically stable hip prosthesis, well-fixed with uniform periprosthetic bone density and a sharp, continuous cortical margin. The joint space is symmetric and preserved. There is no evidence of a cortical fracture line, angulation, or bone discontinuity.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 90,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable hip prosthesis with normal alignment. The surrounding bone shows uniform density and a smooth, continuous cortical margin. The joint space is symmetric. There is no evidence of a fracture line, cortical angulation, or bone displacement.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 91,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-fixed hip prosthesis in correct alignment. The periprosthetic bone is uniformly dense with a sharp, continuous cortical margin. The joint space is symmetric and preserved. The bone is intact, with no fracture lines, cortical discontinuity, or angulation.",
+      "result": "failed",
+      "improvement": -0.1578947368421052
+    },
+    {
+      "round": 92,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable hip prosthesis with normal alignment. The adjacent bone is uniformly dense with a smooth, unbroken cortical margin and a symmetric joint space. The bone is structurally intact, showing no fracture lines, cortical disruption, or deformity.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 93,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-fixed hip prosthesis, with uniform periprosthetic bone density and a sharp, continuous cortical margin. The joint space is symmetric and preserved. The bone is intact and continuous, lacking the sharp cortical break, angulation, or displacement of a fracture.",
+      "result": "failed",
+      "improvement": -0.15479876160990713
+    },
+    {
+      "round": 94,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable, well-aligned hip prosthesis. The periprosthetic bone shows uniform density with a sharp, continuous cortical margin. The joint space is symmetric. Crucially, the bone is intact, with no evidence of a fracture line, cortical discontinuity, or angulation.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 95,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable hip prosthesis with normal alignment. The surrounding bone is uniformly dense with a sharp, continuous cortical margin and a symmetric joint space. The femoral and pelvic bones are intact, showing no fracture lines, cortical discontinuity, or angular deformity.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 96,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-fixed hip prosthesis in anatomic alignment. The periprosthetic bone shows uniform density and a smooth, continuous cortical margin. The joint space is symmetric. The bone is structurally intact, lacking the sharp cortical break, angulation, or displacement of a fracture.",
+      "result": "failed",
+      "improvement": -0.14860681114551078
+    },
+    {
+      "round": 97,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A stable hip prosthesis with normal alignment. The adjacent bone is uniformly dense with a sharp, continuous cortical margin. The joint space is symmetric and preserved. The bone is intact, with no fracture lines, cortical discontinuity, or angulation.",
+      "result": "failed",
+      "improvement": -0.11764705882352944
+    },
+    {
+      "round": 98,
+      "class": "Good Place",
+      "old_desc": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+      "new_desc": "A well-fixed hip prosthesis in correct alignment. The periprosthetic bone is uniformly dense with a sharp, continuous cortical margin. The joint space is symmetric and preserved. The bone is intact, showing no fracture line, cortical break, or angular deformity.",
+      "result": "failed",
+      "improvement": -0.15479876160990713
+    },
+    {
+      "round": 99,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is indicated by a thin, linear radiolucent line at the bone-implant interface, often with migration. This contrasts with a well-fixed prosthesis, which shows uniform bone density and a smooth, continuous cortical margin without such a lucent line.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 100,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    },
+    {
+      "round": 101,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    },
+    {
+      "round": 102,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup shows a thin radiolucent line at the bone-implant interface, often with migration. This is distinct from a well-fixed prosthesis, which has uniform bone density and a smooth, continuous cortical margin without such a gap.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 103,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    },
+    {
+      "round": 104,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup is characterized by a thin radiolucent line at the bone-implant interface, often with migration. This contrasts with a stable prosthesis, which has uniform bone density and a smooth, continuous cortical margin without such a gap.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 105,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    },
+    {
+      "round": 106,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "A loose acetabular cup presents as a thin radiolucent line at the bone-implant interface, often with migration. This is distinct from a well-fixed prosthesis, which shows uniform bone density and a smooth, continuous cortical margin without such a lucent gap.",
+      "result": "failed",
+      "improvement": -0.02786377708978327
+    },
+    {
+      "round": 107,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    },
+    {
+      "round": 108,
+      "class": "Acetabular Loosening",
+      "old_desc": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+      "new_desc": "Error: Error code: 429 - {'message': 'Request was rejected due to rate limiting. Details: TPM limit reached.', 'data': None}",
+      "result": "failed",
+      "improvement": -0.07120743034055721
+    }
+  ]
+}

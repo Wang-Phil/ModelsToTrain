@@ -27,7 +27,16 @@ def get_resnet18(num_classes=9, pretrained=False):
     Returns:
         ResNet18模型
     """
-    model = models.resnet18(pretrained=pretrained)
+    # 兼容新版本 PyTorch (使用 weights 参数)
+    try:
+        # PyTorch 1.13+ 使用 weights 参数
+        if pretrained:
+            model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        else:
+            model = models.resnet18(weights=None)
+    except (AttributeError, TypeError):
+        # 旧版本 PyTorch 使用 pretrained 参数
+        model = models.resnet18(pretrained=pretrained)
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features, num_classes)
     return model

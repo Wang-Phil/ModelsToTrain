@@ -1,11 +1,11 @@
 {
-  "Acetabular Loosening": "The acetabular cup shows signs of loosening with radiolucent lines or migration between the cup and bone interface.",
-  "Dislocation": "The hip prosthesis has dislocated with the femoral head displaced from the acetabular cup.",
-  "Fracture": "There is a fracture visible in the bone structure around the hip prosthesis.",
-  "Good Place": "The hip prosthesis is in good position with proper alignment and no signs of loosening or migration.",
-  "Native Hip": "This is a native hip joint without any prosthetic components, showing normal anatomy.",
-  "Spacer": "A temporary spacer is present in the hip joint, typically used during staged revision surgery.",
-  "Stem Loosening": "The femoral stem shows signs of loosening with radiolucent lines or migration between the stem and bone interface.",
-  "Infection": "There is evidence of infection in the hip prosthesis area.",
-  "Wear": "There is evidence of wear in the hip prosthesis, typically seen as asymmetric joint space narrowing or particle debris."
+  "Acetabular Loosening": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+  "Dislocation": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+  "Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+  "Good Place": "The hip prosthesis is in an appropriate position with proper alignment and no evidence of loosening, migration, or malposition.",
+  "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+  "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+  "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+  "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+  "Wear": "Wear debris is present around the prosthetic components, accompanied by adjacent bone resorption or asymmetric joint space narrowing consistent with prosthesis wear and potential osteolysis."
 }

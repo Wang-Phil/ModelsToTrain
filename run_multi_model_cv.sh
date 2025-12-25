@@ -12,10 +12,10 @@ set -e  # 遇到错误立即退出
 DATA_DIR="single_label_data"
 
 # 输出基础目录
-OUTPUT_BASE_DIR="checkpoints/final_starnet_models/final_model"
+OUTPUT_BASE_DIR="checkpoints/clip_models"
 
 # GPU列表（用空格分隔，例如: "0 1 2 3"）
-GPUS=(8 1 5 6 7)
+GPUS=(0 3 8)
 
 # PLD setting for long tail 
 #===============================
@@ -30,14 +30,6 @@ GPUS=(8 1 5 6 7)
 
 # 模型列表（要训练的模型名称）
 MODELS=(
-    # 空间注意力机制换一个位置尝试实验
-    # "starnet_s2"
-    # 统一归一化，同时优化权重配置
-    # "starnet_dual_pyramid_sa"
-    # 去除了空间注意力机制，再试一下
-    # "starnet_dual_pyramid"
-    # 双金字塔，使用Swin Transformer+空间注意力机制
-    # "starnet_dual_swin_pyramid"
     # 原始StarNet
     # "starnet_s1"
     # 基于FPN的StarNet
@@ -49,7 +41,7 @@ MODELS=(
     # "starnet_s1"  
     # "starnet_s2"
     # "starnet_s3"
-    # "resnet18"
+    "resnet18"
     # "resnet50"
     # "resnet101"
     # "inceptionv3"
@@ -62,39 +54,32 @@ MODELS=(
     # "lsnet_s"
     # "lsnet_b"
     # "starnet_vit_hybrid_t"
-    # 重新测试
-    # "starnet_dual_swin_pyramid"
-    # "starnet_s1_pyramid"
-    # "starnet_s1_parallel_sa"
-    # "starnet_arconv_s1"
-    # "starnet_dual_pyramid_rcf"
-    # "starnet_s1_gated"
-    # "starnet_s1_odconv"
-    # "starnet_s1_lsk"
-    # "starnet_s1_grn"
-    # "starnet_gated_s1"
-    # "starnet_s1_gated_skip"
-    # "starnet_s1_dl"
-    # "starnet_s1_lora"
 
     # 验证cross attention与空间注意力融合效果
     # "starnet_s1_final"
     # "starnet_s2_final"
     # "starnet_s3_final"
 
-    # 空间注意力消融实验 (Spatial Attention Variants)
-    "starnet_sa_s1"  # 所有stage都加空间注意力 (stage 0,1,2,3)
-    # "starnet_sa_s2"  # 第一个stage不加注意力 (stage 1,2,3加注意力)
-    # "starnet_sa_s3"  # 前两个stage不加注意力 (stage 2,3加注意力)
-    # "starnet_sa_s4"  # 前三个stage不加注意力 (只有stage 3加注意力)
+    # StarNet SK Kernel Sizes Ablation (不同SK kernel sizes组合的消融实验)
+    # 前3个stage用Block，最后一个stage用SKStarBlock
+    # "starnet_s1_sk13"  # SK kernel sizes [1, 3]
+    # "starnet_s1_sk15"  # SK kernel sizes [1, 5]
+    # "starnet_s1_sk17"  # SK kernel sizes [1, 7]
+    # "starnet_s1_sk19"  # SK kernel sizes [1, 9]
+    # "starnet_s1_sk35"  # SK kernel sizes [3, 5]
+    # "starnet_s1_sk37"  # SK kernel sizes [3, 7]
+    # "starnet_s1_sk39"  # SK kernel sizes [3, 9]
+    # "starnet_s1_sk57"  # SK kernel sizes [5, 7]
+    # "starnet_s1_sk59"  # SK kernel sizes [5, 9]
+    # "starnet_s1_sk79"  # SK kernel sizes [7, 9]
 
-    # 交叉星乘 消融实验
-    # "starnet_s1_cross_star"
-    # "starnet_s1_cross_star_add"
-    # "starnet_s1_cross_star_samescale"
-
-    # 调整gln与注意力的位置
-    # "starnet_s1_cross_with_gln"
+    # SK-StarNet (轻量级 SK 融合 StarNet)
+    # "sk_starnet_s1"  # SK-StarNet Small/1: base_dim=24, depths=[2,2,8,3], mlp_ratio=3, 使用 LightSKFusion 替换 7x7 DWConv
+    
+    # StarNet ablation studies (from starnet.py)
+    # "starnet_s1_grn_only"  # 所有Block开启GRN, 关闭空间注意力, 包括SKStarBlock
+    # "starnet_s1_sa_only"   # 所有Block开启空间注意力, 关闭GRN, 包括SKStarBlock
+    # "starnet_s1"
 
     # 新模型
     # "starnet_cf_s3"
@@ -104,6 +89,13 @@ MODELS=(
     # "starnet_s2"
     # "starnet_s3"
     # "starnet_s4"
+
+    # "starnet_s1_final"
+    # "starnet_s1_sk39"
+
+    # "starnet_sa_s2"
+    # "starnet_sa_s3"
+    # "starnet_sa_s4"
 
 )
 
@@ -119,7 +111,7 @@ WEIGHT_DECAY=0.001
 N_SPLITS=5
 SEED=42
 # 早停策略：基于val_mAP监控，patience默认30
-EARLY_STOPPING_PATIENCE=60
+EARLY_STOPPING_PATIENCE=200
 EARLY_STOPPING_MIN_DELTA=0.1  # mAP提升超过0.1%才算改进
 
 # 显存优化参数
@@ -143,10 +135,10 @@ USE_SIMPLE_SPLIT=false
 VAL_RATIO=0.4  # 验证集比例（仅在USE_SIMPLE_SPLIT=true时使用）
 
 # 是否使用预训练权重（true/false）
-USE_PRETRAINED=false
+USE_PRETRAINED=true
 
 # 日志目录
-LOG_DIR="logs/final_starnet_models/final_model"
+LOG_DIR="logs/clip_training"
 mkdir -p "$LOG_DIR"
 
 # ============================================
@@ -490,25 +482,29 @@ try:
     
     mode = data.get('mode', 'cv')
     if mode == 'simple_split':
-        # 简单划分模式的结果
+        # 简单划分模式的结果（多分类任务，mAP为主要指标）
         if 'best_val_mAP' in data:
-            print(f"  最佳验证mAP: {data.get('best_val_mAP', 0):.2f}% (Epoch {data.get('best_epoch', 0)})")
+            print(f"  最佳验证mAP: {data.get('best_val_mAP', 0):.2f}% (Epoch {data.get('best_epoch', 0)}) [主要指标]")
+        else:
+            print(f"  最佳验证mAP: {data.get('mAP', 0):.2f}% (Epoch {data.get('best_epoch', 0)}) [主要指标]")
+        print(f"  最佳验证准确率: {data.get('best_val_acc', 0):.2f}% (Epoch {data.get('best_epoch', 0)})")
         print(f"  mAP: {data.get('mAP', 0):.2f}%")
         print(f"  Precision: {data.get('precision_macro', 0):.2f}%")
         print(f"  Recall: {data.get('recall_macro', 0):.2f}%")
         print(f"  F1 Score: {data.get('f1_macro', 0):.2f}%")
-        print(f"  准确率: {data.get('best_val_acc', 0):.2f}% (Epoch {data.get('best_epoch', 0)})")
         print(f"  参数量: {data.get('params_millions', 0):.2f}M")
         print(f"  FLOPs: {data.get('flops_millions', 0):.2f}M")
     else:
-        # 交叉验证模式的结果
+        # 交叉验证模式的结果（多分类任务，mAP为主要指标）
         if 'average_best_val_mAP' in data:
-            print(f"  平均最佳验证mAP: {data.get('average_best_val_mAP', 0):.2f}% ± {data.get('std_best_val_mAP', 0):.2f}%")
+            print(f"  平均最佳验证mAP: {data.get('average_best_val_mAP', 0):.2f}% ± {data.get('std_best_val_mAP', 0):.2f}% [主要指标]")
+        else:
+            print(f"  平均最佳验证mAP: {data.get('average_mAP', 0):.2f}% ± {data.get('std_mAP', 0):.2f}% [主要指标]")
+        print(f"  平均最佳验证准确率: {data.get('average_best_val_acc', 0):.2f}% ± {data.get('std_best_val_acc', 0):.2f}%")
         print(f"  平均mAP: {data.get('average_mAP', 0):.2f}% ± {data.get('std_mAP', 0):.2f}%")
         print(f"  平均Precision: {data.get('average_precision', 0):.2f}% ± {data.get('std_precision', 0):.2f}%")
         print(f"  平均Recall: {data.get('average_recall', 0):.2f}% ± {data.get('std_recall', 0):.2f}%")
         print(f"  平均F1 Score: {data.get('average_f1', 0):.2f}% ± {data.get('std_f1', 0):.2f}%")
-        print(f"  平均准确率: {data.get('average_best_val_acc', 0):.2f}% ± {data.get('std_best_val_acc', 0):.2f}%")
         print(f"  参数量: {data.get('params_millions', 0):.2f}M")
         print(f"  FLOPs: {data.get('flops_millions', 0):.2f}M")
 except Exception as e:

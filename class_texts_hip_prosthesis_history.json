@@ -1,0 +1,39 @@
+// 最原始的描述
+{
+  "Acetabular Loosening": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+  "Dislocation": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+  "Periprosthetic Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+  "Good Place": "The hip prosthesis is in an appropriate position with proper alignment and no evidence of loosening, migration, or malposition.",
+  "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+  "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+  "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+  "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+  "Wear": "Wear debris is present around the prosthetic components, accompanied by adjacent bone resorption or asymmetric joint space narrowing consistent with prosthesis wear and potential osteolysis."
+}
+
+// 第一次优化后的描述
+
+{
+  "Acetabular Loosening": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+  "Dislocation": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+  "Periprosthetic Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+  "Good Place": "A well-functioning hip prosthesis with symmetrical joint space and stable component fixation. The surrounding bone shows no signs of aggressive osteolysis, wear-induced scalloping, or particulate debris. Implant appears in a neutral, non-deforming position.",
+  "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+  "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+  "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+  "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+  "Wear": "Wear debris is present around the prosthetic components, accompanied by adjacent bone resorption or asymmetric joint space narrowing consistent with prosthesis wear and potential osteolysis."
+}
+
+// 第二次优化后的描述
+{
+  "Acetabular Loosening": "A loose acetabular cup demonstrates a thin, linear radiolucent line at the bone-implant interface, often with migration. This is a linear interface finding, distinct from the asymmetric joint space narrowing and focal, scalloped osteolytic lesions that characterize wear.",
+  "Dislocation": "A dislocated hip prosthesis: the femoral head component is completely displaced from the acetabular cup, creating a non-anatomic gap. The femoral and pelvic bones are intact, without the cortical disruption or angulation characteristic of a fracture.",
+  "Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+  "Good Place": "A hip prosthesis with stable fixation and normal alignment. The adjacent bone shows uniform density with a smooth, continuous cortical interface. This contrasts sharply with the lucent lines, debris-induced osteolysis, and asymmetric narrowing seen in wear.",
+  "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+  "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+  "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+  "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+  "Wear": "Radiographic evidence of prosthesis wear, including asymmetric joint space narrowing and periprosthetic lucent zones indicative of osteolysis and bone resorption. Wear debris may be visible as particulate or cloudy densities. This contrasts with the uniform bone density and symmetric joint space of a well-fixed implant."
+}

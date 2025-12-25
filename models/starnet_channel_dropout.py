@@ -65,6 +65,8 @@ class Block(nn.Module):
 
     def forward(self, x):
         input = x
+        if self.with_attn:
+            x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2

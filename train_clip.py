@@ -1550,6 +1550,10 @@ def train_multiple_configs(data_dir, output_base_dir, configs):
                 # 移除任何可能存在的use_cv参数（虽然应该不会出现，但为了安全）
                 all_params.pop('use_cv', None)
                 
+                # 移除 train_clip_cross_validation 不支持的参数
+                all_params.pop('freeze_encoders', None)
+                all_params.pop('pretrained_model_path', None)
+                
                 train_clip_cross_validation(**all_params)
             else:
                 # 单配置训练，移除use_cv和n_splits参数

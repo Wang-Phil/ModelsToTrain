@@ -423,7 +423,7 @@ def train_fold(
         history['val_acc'].append(val_acc)
         history['val_mAP'].append(val_mAP)
         
-        # 保存最佳模型（基于mAP）
+        # 保存最佳模型（基于mAP，适用于多分类任务）
         improved = False
         if val_mAP > best_val_mAP + min_delta:
             best_val_mAP = val_mAP
@@ -453,7 +453,7 @@ def train_fold(
         else:
             patience_counter += 1
         
-        # Early Stopping（基于mAP）
+        # Early Stopping（基于mAP，适用于多分类任务）
         if patience is not None and patience_counter >= patience:
             print(f"\nEarly Stopping触发! (Fold {fold_num})")
             print(f"最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
@@ -506,12 +506,13 @@ def train_fold(
         )
     
     print(f"\nFold {fold_num} 训练完成!")
-    print(f"  最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
+    print(f"  最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch}) [主要指标]")
     print(f"  最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch})")
     print(f"  mAP: {final_metrics['mAP']:.2f}%")
     print(f"  Precision (Macro): {final_metrics['precision_macro']:.2f}%")
     print(f"  Recall (Macro): {final_metrics['recall_macro']:.2f}%")
     print(f"  F1 Score (Macro): {final_metrics['f1_macro']:.2f}%")
+    print(f"  准确率: {final_metrics.get('accuracy', best_val_acc):.2f}%")
     print(f"  参数量: {params_millions:.2f}M")
     print(f"  FLOPs: {flops_millions:.2f}M")
     print(f"  训练时间: {total_time / 60:.2f} 分钟")
@@ -721,17 +722,25 @@ def train_cross_validation(args):
     params_millions = all_fold_results[0]['params_millions']
     flops_millions = all_fold_results[0]['flops_millions']
     
-    # 打印表格格式的结果
+    # 打印表格格式的结果（多分类任务，突出mAP）
     print(f"\n{'='*100}")
     print(f"{'指标':<20} {'Fold 1':<12} {'Fold 2':<12} {'Fold 3':<12} {'Fold 4':<12} {'Fold 5':<12} {'平均±标准差':<20}")
     print(f"{'='*100}")
     
+    # 首先显示mAP（主要指标）
     for i, result in enumerate(all_fold_results, 1):
         if i == 1:
             print(f"{'Best Val mAP (%)':<20} {result['best_val_mAP']:>10.2f}% ", end='')
         else:
             print(f"{'':<20} {result['best_val_mAP']:>10.2f}% ", end='')
     print(f"{avg_val_mAP:>6.2f}% ± {std_val_mAP:>5.2f}%")
+    
+    for i, result in enumerate(all_fold_results, 1):
+        if i == 1:
+            print(f"{'Best Val Acc (%)':<20} {result['best_val_acc']:>10.2f}% ", end='')
+        else:
+            print(f"{'':<20} {result['best_val_acc']:>10.2f}% ", end='')
+    print(f"{avg_val_acc:>6.2f}% ± {std_val_acc:>5.2f}%")
     
     for i, result in enumerate(all_fold_results, 1):
         if i == 1:
@@ -769,7 +778,7 @@ def train_cross_validation(args):
     print(f"\n详细结果:")
     for result in all_fold_results:
         print(f"  Fold {result['fold']}:")
-        print(f"    最佳验证mAP: {result['best_val_mAP']:.2f}% (Epoch {result['best_epoch']})")
+        print(f"    最佳验证mAP: {result['best_val_mAP']:.2f}% (Epoch {result['best_epoch']}) [主要指标]")
         print(f"    最佳验证准确率: {result['best_val_acc']:.2f}% (Epoch {result['best_epoch']})")
         print(f"    mAP: {result['mAP']:.2f}%")
         print(f"    Precision: {result['precision_macro']:.2f}%")
@@ -777,7 +786,7 @@ def train_cross_validation(args):
         print(f"    F1 Score: {result['f1_macro']:.2f}%")
     
     print(f"\n平均结果:")
-    print(f"  平均最佳验证mAP: {avg_val_mAP:.2f}% ± {std_val_mAP:.2f}%")
+    print(f"  平均最佳验证mAP: {avg_val_mAP:.2f}% ± {std_val_mAP:.2f}% [主要指标]")
     print(f"  平均最佳验证准确率: {avg_val_acc:.2f}% ± {std_val_acc:.2f}%")
     print(f"  平均mAP: {avg_mAP:.2f}% ± {std_mAP:.2f}%")
     print(f"  平均Precision: {avg_precision:.2f}% ± {std_precision:.2f}%")
@@ -786,7 +795,7 @@ def train_cross_validation(args):
     print(f"  平均最终验证准确率: {avg_final_val_acc:.2f}%")
     print(f"  平均最终验证损失: {avg_final_val_loss:.4f}")
     
-    # 保存汇总结果
+    # 保存汇总结果（多分类任务，mAP为主要指标）
     summary = {
         'n_splits': args.n_splits,
         'model': args.model,
@@ -795,6 +804,7 @@ def train_cross_validation(args):
         'loss': args.loss,
         'lr': args.lr,
         'augmentation': args.augmentation,
+        'primary_metric': 'mAP',  # 标记主要指标为mAP
         'average_best_val_mAP': float(avg_val_mAP),
         'std_best_val_mAP': float(std_val_mAP),
         'average_best_val_acc': float(avg_val_acc),
@@ -960,7 +970,7 @@ def train_simple_split(args):
         class_counts=full_dataset.class_counts
     )
     
-    # 保存结果
+    # 保存结果（多分类任务，mAP为主要指标）
     summary = {
         'mode': 'simple_split',
         'val_ratio': args.val_ratio,
@@ -971,6 +981,8 @@ def train_simple_split(args):
         'lr': args.lr,
         'augmentation': args.augmentation,
         'use_dynamic_augmentation': args.use_dynamic_augmentation,
+        'primary_metric': 'mAP',  # 标记主要指标为mAP
+        'best_val_mAP': float(result.get('best_val_mAP', result['mAP'])),
         'best_val_acc': float(result['best_val_acc']),
         'best_epoch': result['best_epoch'],
         'final_val_acc': float(result['final_val_acc']),
@@ -1104,9 +1116,9 @@ def main():
     
     # Early Stopping
     parser.add_argument('--early-stopping-patience', type=int, default=20,
-                        help='Early Stopping的patience（默认20，基于val_mAP监控）')
+                        help='Early Stopping的patience（默认20，基于val_mAP监控，适用于多分类任务）')
     parser.add_argument('--early-stopping-min-delta', type=float, default=0.0,
-                        help='Early Stopping的最小改善阈值')
+                        help='Early Stopping的最小改善阈值（mAP提升超过此值才算改进）')
     
     # 其他
     parser.add_argument('--num-workers', type=int, default=4,

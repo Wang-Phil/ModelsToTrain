@@ -1,0 +1,84 @@
+{
+  "config": {
+    "image_encoder": "resnet18",
+    "text_encoder": "bert-base-chinese",
+    "embed_dim": 256,
+    "batch_size": 4,
+    "epochs": 1,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "temperature": 0.07,
+    "img_size": 224,
+    "augmentation": "minimal",
+    "n_splits": 2,
+    "random_state": 42
+  },
+  "fold_results": {
+    "fold_train_loss": [
+      1.387475344214109,
+      1.3822818248729987
+    ],
+    "fold_train_acc": [
+      7.054455445544554,
+      13.22620519159456
+    ],
+    "fold_val_loss": [
+      1.3796759544334976,
+      1.3867235844678218
+    ],
+    "fold_val_acc": [
+      3.9555006180469716,
+      14.108910891089108
+    ],
+    "fold_val_mAP": [
+      1.776941940876367,
+      1.5676567656765676
+    ],
+    "fold_best_val_acc": [
+      3.9555006180469716,
+      14.108910891089108
+    ],
+    "fold_best_val_mAP": [
+      1.776941940876367,
+      1.5676567656765676
+    ],
+    "fold_best_epoch": [
+      1,
+      1
+    ],
+    "fold_best_precision": [
+      1.776941940876367,
+      1.5676567656765676
+    ],
+    "fold_best_recall": [
+      11.594202898550725,
+      11.11111111111111
+    ],
+    "fold_best_f1": [
+      1.804942359578121,
+      2.74765003615329
+    ]
+  },
+  "average_results": {
+    "avg_train_loss": 1.3848785845435538,
+    "std_train_loss": 0.002596759670555171,
+    "avg_train_acc": 10.140330318569557,
+    "std_train_acc": 3.0858748730250034,
+    "avg_val_loss": 1.3831997694506597,
+    "std_val_loss": 0.0035238150171621463,
+    "avg_val_acc": 9.03220575456804,
+    "std_val_acc": 5.076705136521068,
+    "avg_val_mAP": 1.6722993532764674,
+    "std_val_mAP": 0.10464258759989964,
+    "avg_best_val_acc": 9.03220575456804,
+    "std_best_val_acc": 5.076705136521068,
+    "avg_best_val_mAP": 1.6722993532764674,
+    "std_best_val_mAP": 0.10464258759989964,
+    "avg_best_precision": 1.6722993532764674,
+    "std_best_precision": 0.10464258759989964,
+    "avg_best_recall": 11.352657004830917,
+    "std_best_recall": 0.24154589371980695,
+    "avg_best_f1": 2.2762961978657055,
+    "std_best_f1": 0.47135383828758437
+  }
+}

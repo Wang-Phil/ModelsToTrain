@@ -30,24 +30,39 @@ except ImportError:
         GradScaler = None
 # 导入模型
 from models.classic_models import create_model as create_classic_model
-from models.starnet import starnet_s1, starnet_s2, starnet_s3, starnet_s4
+from models.starnet import (
+    starnet_s1, starnet_s2, starnet_s3, starnet_s4,
+    starnet_s1_sk13, starnet_s1_sk15, starnet_s1_sk17, starnet_s1_sk19,
+    starnet_s1_sk35, starnet_s1_sk37, starnet_s1_sk39,
+    starnet_s1_sk57, starnet_s1_sk59, starnet_s1_sk79,
+    starnet_s1_grn_only, starnet_s1_sa_only
+)
 from models.starnet_attention import starnet_s2_multi_head
 from models.multi_head_classifiers import LDAM_CB_Loss
-from models.starnet_parallel_sa import starnet_s1_parallel_sa
-from models.starnet_res_fusion import starnet_s1_res_fusion
-from models.starnet_s1_pyramid import starnet_s1_pyramid
-from models.starnet_dual_pyramid import starnet_dual_pyramid
-from models.starnet_dual_pyramid_sa import starnet_dual_pyramid_sa
-from models.starnet_dual_swin_pyramid import starnet_dual_swin_pyramid
-from models.starnet_dual_pyramid_rcf import starnet_dual_pyramid_rcf
-from models.starnet_s1_concat import starnet_s1_cross_star, starnet_s1_cross_star_add, starnet_s1_cross_star_samescale
-from models.starnet_s1_artifact import starnet_artifact_s1
-from models.starnet_GRN import starnet_s1_GRN 
-from models.starnet_final_model import starnet_s1_final
+from models.starnet_s1_concat import (
+    starnet_s1_sa,
+    starnet_s1_cbam,
+    starnet_s1_parallel_attn,
+    starnet_s1_all_grn,
+    starnet_s1_all_sa,
+)
+from models.starnet_final_model import (
+    starnet_s1_final,
+    # SKNet 模型（仅保留最佳组合用于向后兼容）
+    starnet_sk_1_3,
+    # 消融实验：不同i_layer上使用Block_SK的变体
+    starnet_sk_ablation_all,
+    starnet_sk_ablation_last3,
+    starnet_sk_ablation_last2,
+    starnet_sk_ablation_last1
+)
+from models.starnet_lightsk import lightsk, lightsk_small, lightsk_base
 from models.starnet_sa_variants import starnet_sa_s1, starnet_sa_s2, starnet_sa_s3, starnet_sa_s4
+from models.starnetsk import starnet_sk_s1
 from models.starnet_crosswithgln import starnet_s1_cross_with_gln, starnet_s2_cross_with_gln
-from models.starnet_cfs import starnet_cf_s3
-from models.lsnet import lsnet_t, lsnet_s, lsnet_b
+from models.convnextv2 import convnextv2_tiny, convnextv2_nano, convnextv2_base, convnextv2_large
+from models.mobilenetv4 import mobilenetv4_conv_small, mobilenetv4_conv_medium, mobilenetv4_conv_large
+from models.sk_starnet_s1 import sk_starnet_s1
 
 
 class ImageFolderDataset(Dataset):
@@ -358,49 +373,65 @@ def create_model(model_name, num_classes=9, pretrained=False, **kwargs):
                     efficientnetv2_s, efficientnetv2_m, efficientnetv2_l,
                     starnet_s050, starnet_s100, starnet_s150
     ConvNeXtV2: convnextv2_tiny, convnextv2_base, convnextv2_large, convnextv2_nano
-    StarNeXt: starnext_tiny, starnext_base, starnext_large, starnext_small, starnext_nano
-    StarNet: starnet_s1, starnet_s2, starnet_s3, starnet_s4
-    StarNet Parallel SA: starnet_s1_parallel_sa
-    StarNet Residual Fusion: starnet_s1_res_fusion
-    StarNet Pyramid SA: starnet_s1_pyramid
-    StarNet Global Fusion: starnet_s1_global_fusion
-    StarNet Dual Pyramid: starnet_dual_pyramid
-    StarNet Dual Pyramid SA: starnet_dual_pyramid_sa
-    StarNet Dual Pyramid RCF: starnet_dual_pyramid_rcf
-    StarNet Dual Pyramid Swin: starnet_dual_swin_pyramid
-    StarNet ARConv: starnet_arconv_s1, starnet_arconv_s2, starnet_arconv_s3, starnet_arconv_s4 (StarNet with ARConv)
-    StarNet DCNv4: starnet_dcnv4_s1, starnet_dcnv4_s2, starnet_dcnv4_s3, starnet_dcnv4_s4 (StarNet with DCNv4 for both dwconv and dwconv2)
-    StarNet Hybrid: starnet_hybrid_s, starnet_hybrid_t (混合 StarBlock + Transformer)
-    StarNet FPN: starnet_fpn_s, starnet_fpn_t (StarNet + Feature Pyramid Network)
-    StarNet ViT Hybrid: starnet_vit_hybrid_s, starnet_vit_hybrid_t (StarBlock + MHA + StarMLP)
-    StarNet ViT Merged: starnet_vit_merged_s, starnet_vit_merged_t (StarAttentionBlock + StarBlockConv)
-    StarNet ViT Single Fusion: starnet_vit_single_fusion (Frozen ViT + StarNet, fusion at Stage4)
-    StarNet LSK: starnet_s1_lsk (StarNet with Large Selective Kernel for spatial attention)
-    StarNet GRN: starnet_s1_GRN (StarNet with Gated Response Normalization)
-    StarNet ODConv: starnet_s1_odconv (StarNet with Omni-Dimensional Dynamic Convolution)
-    StarNet Gated: starnet_gated_s1 (StarNet with configurable gating mechanisms: none, intra, pre, post, swiglu)
-    StarNet Gate Stage: starnet_s1_gated (StarNet with Dynamic Inter-Stage Gating using StarGate)
-    StarNet Skip Gate: starnet_s1_gated_skip (StarNet with Dynamic Skip Gating from Stage 2 to Stage 4)
-    StarNet Dilated: starnet_s1_dl (StarNet with Dilated Convolution in Stages 2 and 3)
-    StarNet LoRA: starnet_s1_lora (StarNet with Texture-Aware LoRA for medical imaging)
-    StarNet Cross-Star: starnet_s1_cross_star (StarNet with Inception-style Cross-Star Operation)
-    StarNet Artifact: starnet_artifact_s1 (StarNet with Artifact-Suppressing Soft-Gating)
+    MobileNetV4: mobilenetv4_conv_small, mobilenetv4_conv_medium, mobilenetv4_conv_large
+    VMamba: vanilla_vmamba_tiny, vanilla_vmamba_small, vanilla_vmamba_base,
+            vmamba_tiny_s2l5, vmamba_small_s2l15, vmamba_base_s2l15,
+            vmamba_tiny_s1l8, vmamba_small_s1l20, vmamba_base_s1l20
+    MambaOut: mambaout_femto, mambaout_kobe, mambaout_tiny, mambaout_small, mambaout_base
     StarNet Final: starnet_s1_final, starnet_s2_final, starnet_s3_final (Final optimized StarNet models)
+    StarNet SK Kernel Sizes Ablation (不同SK kernel sizes组合的消融实验):
+        - starnet_s1_sk13 (SK kernel sizes [1, 3], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk15 (SK kernel sizes [1, 5], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk17 (SK kernel sizes [1, 7], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk19 (SK kernel sizes [1, 9], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk35 (SK kernel sizes [3, 5], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk37 (SK kernel sizes [3, 7], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk39 (SK kernel sizes [3, 9], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk57 (SK kernel sizes [5, 7], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk59 (SK kernel sizes [5, 9], 前3个stage用Block，最后一个stage用SKStarBlock)
+        - starnet_s1_sk79 (SK kernel sizes [7, 9], 前3个stage用Block，最后一个stage用SKStarBlock)
     StarNet SA Variants: 
         - starnet_sa_s1 (所有stage都加空间注意力: stage 0,1,2,3)
         - starnet_sa_s2 (第一个stage不加注意力: stage 1,2,3加注意力)
         - starnet_sa_s3 (前两个stage不加注意力: stage 2,3加注意力)
         - starnet_sa_s4 (前三个stage不加注意力: 只有stage 3加注意力)
+    StarNet SKNet Size Ablation (Selective Kernel Size Combinations):
+        双分支组合:
+        - starnet_sk_1_3 (1x1 + 3x3 双分支, 最佳组合，保留用于向后兼容)
+    StarNet SK Block Layer Ablation (不同i_layer上使用Block_SK的消融实验):
+        - starnet_sk_ablation_all (所有layer都使用Block_SK: i_layer 0,1,2,3)
+        - starnet_sk_ablation_last3 (后面三个layer使用Block_SK: i_layer 1,2,3)
+        - starnet_sk_ablation_last2 (后面两个layer使用Block_SK: i_layer 2,3)
+        - starnet_sk_ablation_last1 (只有最后一个layer使用Block_SK: i_layer 3)
+    LightSK models (LightSKBlock only, no attention, no GRN):
+        - lightsk (默认配置: base_dim=24, depths=[2,2,8,3])
+        - lightsk_small (小版本: base_dim=16, depths=[2,2,6,2])
+        - lightsk_base (基础版本: base_dim=32, depths=[2,2,8,3])
     StarNet Cross-Star Ablation: 
         - starnet_s1_cross_star (D-基线: Concat((x_3A * x_7B), (x_7A * x_3B)))
         - starnet_s1_cross_star_add (D1-加法: Concat((x_3A + x_7B), (x_7A + x_3B)))
         - starnet_s1_cross_star_samescale (D2-同尺度: Concat((x_3A * x_3B), (x_7A * x_7B)))
+    StarNet with Channel Attention (CA):
+        - starnet_s1_sa (StarNet S1 with Channel Attention module added to Block)
+    StarNet with CBAM (Convolutional Block Attention Module):
+        - starnet_s1_cbam (StarNet S1 with CBAM: combines Channel Attention and Spatial Attention)
+    StarNet with Parallel Attention:
+        - starnet_s1_parallel_attn (StarNet S1 with Parallel Attention: Channel and Spatial Attention in parallel, then fused)
+    StarNet GRN/SA toggles (from starnet_s1_concat.py):
+        - starnet_s1_all_grn (所有Block开启GRN, 关闭空间注意力)
+        - starnet_s1_all_sa (所有Block开启空间注意力, 关闭GRN)
+    StarNet ablation studies (from starnet.py):
+        - starnet_s1_grn_only (所有Block开启GRN, 关闭空间注意力, 包括SKStarBlock)
+        - starnet_s1_sa_only (所有Block开启空间注意力, 关闭GRN, 包括SKStarBlock)
     StarNet Cross-Star with GLN:
         - starnet_s1_cross_with_gln (StarNet with GRN + Cross-Star Block: 浅层用Block+SA, 深层用CrossStarBlock)
         - starnet_s2_cross_with_gln (StarNet with GRN + Cross-Star Block: 浅层用Block+SA, 深层用CrossStarBlock)
     StarNet Channel Frequency (CF):
         - starnet_cf_s3 (StarNet with Channel Frequency Attention & Long-Tail Re-scaling: 深层使用CFStarBlock)
-    LSNet: lsnet_t, lsnet_s, lsnet_b
+    StarNet SK-Attn (融合 SK + Gated FFN + 可选空间注意力):
+        - starnet_sk_attn_s1 (StarNet-SK-Attn Small/1: base_dim=24, depths=[2,2,8,3], 前两个Stage不使用空间注意力)
+    SK-StarNet (轻量级 SK 融合 StarNet):
+        - sk_starnet_s1 (SK-StarNet Small/1: base_dim=24, depths=[2,2,8,3], mlp_ratio=3, 使用 LightSKFusion 替换 7x7 DWConv)
     MogaNet: moganet_small, moganet_base, moganet_large, moganet_xlarge (如果可用)
     """
     model_name = model_name.lower()
@@ -429,33 +460,28 @@ def create_model(model_name, num_classes=9, pretrained=False, **kwargs):
         return starnet_s4(pretrained=pretrained, num_classes=num_classes)
     elif model_name == 'starnet_s5':
         return starnet_s5(pretrained=pretrained, num_classes=num_classes)
+    # StarNet S1 with different SK kernel sizes
+    elif model_name == 'starnet_s1_sk13':
+        return starnet_s1_sk13(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk15':
+        return starnet_s1_sk15(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk17':
+        return starnet_s1_sk17(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk19':
+        return starnet_s1_sk19(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk35':
+        return starnet_s1_sk35(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk37':
+        return starnet_s1_sk37(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk39':
+        return starnet_s1_sk39(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk57':
+        return starnet_s1_sk57(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk59':
+        return starnet_s1_sk59(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sk79':
+        return starnet_s1_sk79(pretrained=pretrained, num_classes=num_classes)
     # StarNet Parallel Spatial Attention
-    elif model_name == 'starnet_s1_parallel_sa':
-        return starnet_s1_parallel_sa(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Residual Fusion
-    elif model_name == 'starnet_s1_res_fusion':
-        return starnet_s1_res_fusion(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Pyramid Spatial Attention
-    elif model_name == 'starnet_s1_pyramid':
-        return starnet_s1_pyramid(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Dual Pyramid (Local + Global)
-    elif model_name == 'starnet_dual_pyramid':
-        return starnet_dual_pyramid(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Dual Pyramid with Spatial Attention
-    elif model_name == 'starnet_dual_pyramid_sa':
-        return starnet_dual_pyramid_sa(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Dual Pyramid with Swin Transformer
-    elif model_name == 'starnet_dual_swin_pyramid':
-        return starnet_dual_swin_pyramid(pretrained=pretrained, num_classes=num_classes)
-    
-    # StarNet Dual Pyramid with Residual Cascaded Fusion (RCF)
-    elif model_name == 'starnet_dual_pyramid_rcf':
-        return starnet_dual_pyramid_rcf(pretrained=pretrained, num_classes=num_classes)
 
     # StarNet GRN models
     elif model_name == 'starnet_s1_grn':
@@ -464,10 +490,30 @@ def create_model(model_name, num_classes=9, pretrained=False, **kwargs):
     # StarNet Cross-Star Ablation Studies
     elif model_name == 'starnet_s1_cross_star':
         return starnet_s1_cross_star(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s1_cross_star_add':
-        return starnet_s1_cross_star_add(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s1_cross_star_samescale':
-        return starnet_s1_cross_star_samescale(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet with Channel Attention
+    elif model_name == 'starnet_s1_sa':
+        return starnet_s1_sa(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_all_grn':
+        return starnet_s1_all_grn(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_all_sa':
+        return starnet_s1_all_sa(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet ablation studies (from starnet.py)
+    elif model_name == 'starnet_s1_grn_only':
+        return starnet_s1_grn_only(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_s1_sa_only':
+        return starnet_s1_sa_only(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet with CBAM
+    elif model_name == 'starnet_s1_cbam':
+        return starnet_s1_cbam(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet with Parallel Attention
+    elif model_name == 'starnet_s1_parallel_attn':
+        # 默认使用相加融合，可以通过kwargs传递fusion参数
+        fusion = kwargs.get('fusion', 'add')
+        return starnet_s1_parallel_attn(pretrained=pretrained, num_classes=num_classes, fusion=fusion)
 
     # StarNet Artifact models
     elif model_name == 'starnet_artifact_s1':
@@ -476,10 +522,32 @@ def create_model(model_name, num_classes=9, pretrained=False, **kwargs):
     # StarNet Final models
     elif model_name == 'starnet_s1_final':
         return starnet_s1_final(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s2_final':
-        return starnet_s2_final(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s3_final':
-        return starnet_s3_final(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet SKNet 模型（仅保留最佳组合用于向后兼容）
+    elif model_name == 'starnet_sk_1_3':
+        return starnet_sk_1_3(pretrained=pretrained, num_classes=num_classes)
+    
+    # StarNet SK Block Layer Ablation (不同i_layer上使用Block_SK的消融实验)
+    elif model_name == 'starnet_sk_ablation_all':
+        return starnet_sk_ablation_all(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_sk_ablation_last3':
+        return starnet_sk_ablation_last3(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_sk_ablation_last2':
+        return starnet_sk_ablation_last2(pretrained=pretrained, num_classes=num_classes)
+    elif model_name == 'starnet_sk_ablation_last1':
+        return starnet_sk_ablation_last1(pretrained=pretrained, num_classes=num_classes)
+    
+    # LightSK models (LightSKBlock only, no attention, no GRN)
+    elif model_name == 'lightsk':
+        return lightsk(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    elif model_name == 'lightsk_small':
+        return lightsk_small(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    elif model_name == 'lightsk_base':
+        return lightsk_base(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    
+    # StarNet SK models
+    elif model_name == 'starnet_sk_s1':
+        return starnet_sk_s1(pretrained=pretrained, num_classes=num_classes, **kwargs)
     
     # StarNet SA Variants (Spatial Attention Variants)
     elif model_name == 'starnet_sa_s1':
@@ -505,22 +573,59 @@ def create_model(model_name, num_classes=9, pretrained=False, **kwargs):
         return starnet_cf_s3(pretrained=pretrained, num_classes=num_classes, 
                             cls_num_list=cls_num_list, use_attn=use_attn)
     
-    # StarNet Cross-Star Ablation Studies
-    elif model_name == 'starnet_s1_cross_star':
-        return starnet_s1_cross_star(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s1_cross_star_add':
-        return starnet_s1_cross_star_add(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'starnet_s1_cross_star_samescale':
-        return starnet_s1_cross_star_samescale(pretrained=pretrained, num_classes=num_classes)
-
-    # LSNet models
-    elif model_name == 'lsnet_t':
-        return lsnet_t(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'lsnet_s':
-        return lsnet_s(pretrained=pretrained, num_classes=num_classes)
-    elif model_name == 'lsnet_b':
-        return lsnet_b(pretrained=pretrained, num_classes=num_classes)
-
+    # ConvNeXtV2 models
+    elif model_name == 'convnextv2_tiny':
+        return convnextv2_tiny(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    elif model_name == 'convnextv2_nano':
+        return convnextv2_nano(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    elif model_name == 'convnextv2_base':
+        return convnextv2_base(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    elif model_name == 'convnextv2_large':
+        return convnextv2_large(pretrained=pretrained, num_classes=num_classes, **kwargs)
+    
+    # MobileNetV4 models
+    elif model_name == 'mobilenetv4_conv_small':
+        return mobilenetv4_conv_small(num_classes=num_classes, **kwargs)
+    elif model_name == 'mobilenetv4_conv_medium':
+        return mobilenetv4_conv_medium(num_classes=num_classes, **kwargs)
+    elif model_name == 'mobilenetv4_conv_large':
+        return mobilenetv4_conv_large(num_classes=num_classes, **kwargs)
+    
+    # VMamba models
+    elif model_name == 'vanilla_vmamba_tiny':
+        return vanilla_vmamba_tiny(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vanilla_vmamba_small':
+        return vanilla_vmamba_small(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vanilla_vmamba_base':
+        return vanilla_vmamba_base(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_tiny_s2l5':
+        return vmamba_tiny_s2l5(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_small_s2l15':
+        return vmamba_small_s2l15(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_base_s2l15':
+        return vmamba_base_s2l15(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_tiny_s1l8':
+        return vmamba_tiny_s1l8(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_small_s1l20':
+        return vmamba_small_s1l20(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'vmamba_base_s1l20':
+        return vmamba_base_s1l20(pretrained=False, num_classes=num_classes, **kwargs)
+    
+    # MambaOut models
+    elif model_name == 'mambaout_femto':
+        return mambaout_femto(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'mambaout_kobe':
+        return mambaout_kobe(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'mambaout_tiny':
+        return mambaout_tiny(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'mambaout_small':
+        return mambaout_small(pretrained=False, num_classes=num_classes, **kwargs)
+    elif model_name == 'mambaout_base':
+        return mambaout_base(pretrained=False, num_classes=num_classes, **kwargs)
+    
+    # SK-StarNet models (轻量级 SK 融合 StarNet)
+    elif model_name == 'sk_starnet_s1':
+        return sk_starnet_s1(pretrained=pretrained, num_classes=num_classes, **kwargs)
     
     else:
         raise ValueError(f"未知的模型: {model_name}")

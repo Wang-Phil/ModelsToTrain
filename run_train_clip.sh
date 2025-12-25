@@ -36,16 +36,16 @@ DATA_DIR="single_label_data"
 OUTPUT_BASE_DIR="checkpoints/clip_models"
 
 # 日志目录
-LOG_DIR="logs/clip_training"
+LOG_DIR="logs/clip_train"
 mkdir -p "$LOG_DIR"
 
 # GPU列表（用空格分隔，例如: "0 1 2 3"）
 # 如果只有一个GPU，可以设置为单个值，如: GPUS=(5)
 # 多个GPU会循环分配给不同配置
-GPUS=(5)
+GPUS=(9)
 
 # 训练参数
-BATCH_SIZE=32
+BATCH_SIZE=16
 EPOCHS=200
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
@@ -56,11 +56,16 @@ AUGMENTATION="standard"
 NUM_WORKERS=4
 USE_AMP=true
 
+# 交叉验证参数
+USE_CV=true          # 是否使用K折交叉验证（true/false）
+N_SPLITS=5            # 交叉验证折数（默认5折）
+RANDOM_STATE=42       # 随机种子
+
 # 图像编码器列表
 # 支持的 StarNet 模型: starnet_s1, starnet_s2, starnet_s3, starnet_s4, starnet_s050, starnet_s100, starnet_s150
 # 使用预训练权重: starnet_s1:pretrained 或 starnet_s2:true
 IMAGE_ENCODERS=(
-    # StarNet 模型系列（推荐）
+    # StarNet 模型系列（推荐，有预训练权重）
     "starnet_s1"              # 2.9M 参数，最快
     # "starnet_s1:pretrained" # 使用 ImageNet 预训练权重
     # "starnet_s2"            # 3.7M 参数，平衡
@@ -68,8 +73,7 @@ IMAGE_ENCODERS=(
     # "starnet_s3"            # 5.8M 参数，更高精度
     # "starnet_s4"            # 7.5M 参数，最高精度
     
-    # 其他模型
-    # "starnet_dual_pyramid_rcf"  # StarNet Dual-Pyramid RCF 变体
+    # 其他预训练模型
     # "resnet18"
     # "resnet50"
     # "efficientnet-b0"
@@ -152,6 +156,7 @@ run_single_config() {
     local img_encoder=$1
     local txt_encoder=$2
     local gpu_id=$3
+    local config_file_info=$4  # 格式: "config_file_path|config_index"
     
     # 清理编码器名称中的特殊字符（如冒号）
     local img_enc_clean=$(echo "$img_encoder" | tr ':/' '_')
@@ -177,28 +182,78 @@ run_single_config() {
         echo "图像编码器: $img_encoder"
         echo "文本编码器: $txt_encoder"
         echo "GPU ID: $gpu_id"
+        if [ "$USE_CV" = true ]; then
+            echo "交叉验证: 启用 ($N_SPLITS 折)"
+        else
+            echo "交叉验证: 禁用"
+        fi
         echo ""
     } > "$log_file"
     
     # 构建训练命令
-    local cmd="python train_clip.py"
-    cmd="$cmd --data-dir $DATA_DIR"
-    cmd="$cmd --output-dir $output_dir"
-    cmd="$cmd --image-encoder $img_encoder"
-    cmd="$cmd --text-encoder $txt_encoder"
-    cmd="$cmd --embed-dim $EMBED_DIM"
-    cmd="$cmd --batch-size $BATCH_SIZE"
-    cmd="$cmd --epochs $EPOCHS"
-    cmd="$cmd --learning-rate $LEARNING_RATE"
-    cmd="$cmd --weight-decay $WEIGHT_DECAY"
-    cmd="$cmd --temperature $TEMPERATURE"
-    cmd="$cmd --img-size $IMG_SIZE"
-    cmd="$cmd --augmentation $AUGMENTATION"
-    cmd="$cmd --num-workers $NUM_WORKERS"
-    cmd="$cmd --gpu-id $gpu_id"
-    
-    if [ "$USE_AMP" = true ]; then
-        cmd="$cmd --use-amp"
+    # 如果提供了配置文件信息，使用配置文件模式（train_clip.py 会从配置文件读取所有参数）
+    if [ -n "$config_file_info" ] && [ -n "$CONFIG_FILE" ] && [ -f "$CONFIG_FILE" ]; then
+        local config_file_path=$(echo "$config_file_info" | cut -d'|' -f1)
+        local config_index=$(echo "$config_file_info" | cut -d'|' -f2)
+        
+        # 创建一个临时配置文件，只包含当前配置项
+        local temp_config_file=$(mktemp /tmp/clip_config_${config_name}_XXXXXX.json)
+        python3 - "$CONFIG_FILE" "$config_index" "$temp_config_file" << 'PYTHON_EOF'
+import json
+import sys
+
+config_file = sys.argv[1]
+config_index = int(sys.argv[2])
+temp_file = sys.argv[3]
+
+with open(config_file, 'r') as f:
+    all_configs = json.load(f)
+
+# 只保留当前配置项
+single_config = [all_configs[config_index]]
+
+with open(temp_file, 'w') as f:
+    json.dump(single_config, f, indent=2)
+PYTHON_EOF
+        
+        local cmd="python train_clip.py"
+        cmd="$cmd --data-dir $DATA_DIR"
+        cmd="$cmd --output-dir $output_dir"
+        cmd="$cmd --config-file $temp_config_file"
+        cmd="$cmd --multi-config"
+        cmd="$cmd --gpu-id $gpu_id"
+        
+        # 在日志中记录临时文件，训练完成后可以手动清理
+        echo "# 临时配置文件: $temp_config_file (训练完成后可删除)" >> "$log_file"
+    else
+        # 使用命令行参数模式（从脚本变量读取）
+        local cmd="python train_clip.py"
+        cmd="$cmd --data-dir $DATA_DIR"
+        cmd="$cmd --output-dir $output_dir"
+        cmd="$cmd --image-encoder $img_encoder"
+        cmd="$cmd --text-encoder $txt_encoder"
+        cmd="$cmd --embed-dim $EMBED_DIM"
+        cmd="$cmd --batch-size $BATCH_SIZE"
+        cmd="$cmd --epochs $EPOCHS"
+        cmd="$cmd --learning-rate $LEARNING_RATE"
+        cmd="$cmd --weight-decay $WEIGHT_DECAY"
+        cmd="$cmd --temperature $TEMPERATURE"
+        cmd="$cmd --img-size $IMG_SIZE"
+        cmd="$cmd --augmentation $AUGMENTATION"
+        cmd="$cmd --num-workers $NUM_WORKERS"
+        cmd="$cmd --gpu-id $gpu_id"
+        
+        # train_clip.py 默认启用 AMP，只有禁用时才需要 --no-amp
+        if [ "$USE_AMP" = false ]; then
+            cmd="$cmd --no-amp"
+        fi
+        
+        # 交叉验证参数
+        if [ "$USE_CV" = true ]; then
+            cmd="$cmd --use-cv"
+            cmd="$cmd --n-splits $N_SPLITS"
+            cmd="$cmd --random-state $RANDOM_STATE"
+        fi
     fi
     
     # 运行训练并记录日志
@@ -249,7 +304,7 @@ if [ "$USE_MULTI_CONFIG" = true ]; then
     
     # 检查GPU可用性
     print_info "检查GPU可用性..."
-    local available_gpus=()
+    available_gpus=()
     for gpu in "${GPUS[@]}"; do
         if check_gpu $gpu; then
             available_gpus+=($gpu)
@@ -267,30 +322,85 @@ if [ "$USE_MULTI_CONFIG" = true ]; then
     print_info "可用GPU: ${available_gpus[@]}"
     
     # 生成所有配置组合
-    local configs=()
+    configs=()
+    config_files=()
     if [ -n "$CONFIG_FILE" ] && [ -f "$CONFIG_FILE" ]; then
         print_info "从配置文件读取配置: $CONFIG_FILE"
-        # 从JSON文件读取配置
-        while IFS='|' read -r img_enc txt_enc; do
+        # 从JSON文件读取配置，同时保存配置文件路径
+        while IFS='|' read -r img_enc txt_enc config_idx; do
             if [ -n "$img_enc" ] && [ -n "$txt_enc" ]; then
                 configs+=("${img_enc}|${txt_enc}")
+                # 保存配置文件路径和索引，用于后续传递完整配置
+                if [ -n "$config_idx" ]; then
+                    config_files+=("${CONFIG_FILE}|${config_idx}")
+                else
+                    config_files+=("${CONFIG_FILE}|0")
+                fi
             fi
-        done < <(python3 << 'PYTHON_EOF'
+        done < <(python3 - "$CONFIG_FILE" << 'PYTHON_EOF'
 import json
 import sys
+import os
+
+# 调试信息
+if len(sys.argv) < 2:
+    print(f"Error: 缺少配置文件参数", file=sys.stderr)
+    print(f"当前工作目录: {os.getcwd()}", file=sys.stderr)
+    print(f"参数数量: {len(sys.argv)}", file=sys.stderr)
+    print(f"参数列表: {sys.argv}", file=sys.stderr)
+    sys.exit(1)
+
+config_file = sys.argv[1]
+if not os.path.exists(config_file):
+    print(f"Error: 配置文件不存在: {config_file}", file=sys.stderr)
+    sys.exit(1)
 
 try:
-    with open(sys.argv[1], 'r') as f:
+    with open(config_file, 'r') as f:
         configs = json.load(f)
-    for config in configs:
-        img_enc = config.get('image_encoder_name', config.get('image_encoder', 'unknown'))
-        txt_enc = config.get('text_encoder_name', config.get('text_encoder', 'unknown'))
-        print(f"{img_enc}|{txt_enc}")
+    
+    # 检查配置是否为列表
+    if not isinstance(configs, list):
+        print(f"Error: 配置文件应该包含一个列表，但得到: {type(configs)}", file=sys.stderr)
+        sys.exit(1)
+    
+    # 检查配置列表是否为空
+    if len(configs) == 0:
+        print("Warning: 配置文件为空", file=sys.stderr)
+        sys.exit(0)
+    
+    # 遍历配置
+    for idx, config in enumerate(configs):
+        if not isinstance(config, dict):
+            print(f"Warning: 跳过非字典类型的配置项 {idx}: {type(config)}", file=sys.stderr)
+            continue
+        
+        img_enc = config.get('image_encoder_name', config.get('image_encoder', ''))
+        txt_enc = config.get('text_encoder_name', config.get('text_encoder', ''))
+        
+        if img_enc and txt_enc:
+            print(f"{img_enc}|{txt_enc}|{idx}")
+        else:
+            print(f"Warning: 配置项 {idx} 缺少编码器名称 (img: {img_enc}, txt: {txt_enc})", file=sys.stderr)
+            
+except FileNotFoundError:
+    print(f"Error: 配置文件不存在: {config_file}", file=sys.stderr)
+    sys.exit(1)
+except json.JSONDecodeError as e:
+    print(f"Error: JSON 解析错误: {e}", file=sys.stderr)
+    sys.exit(1)
+except IndexError as e:
+    print(f"Error: 列表索引错误: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
+    sys.exit(1)
 except Exception as e:
-    print(f"Error: {e}", file=sys.stderr)
+    print(f"Error: {type(e).__name__}: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
     sys.exit(1)
 PYTHON_EOF
-"$CONFIG_FILE")
+)
     else
         print_info "使用默认配置组合"
         # 生成所有配置组合
@@ -313,27 +423,38 @@ PYTHON_EOF
     declare -A config_names
     
     # 为每个配置分配GPU并启动训练
-    local config_idx=0
+    config_idx=0
     for config_pair in "${configs[@]}"; do
-        IFS='|' read -r img_encoder txt_encoder <<< "$config_pair"
+        IFS='|' read -r img_encoder txt_encoder config_file_idx <<< "$config_pair"
         
         # 循环分配GPU
-        local gpu_idx=$((config_idx % ${#available_gpus[@]}))
-        local assigned_gpu=${available_gpus[$gpu_idx]}
+        gpu_idx=$((config_idx % ${#available_gpus[@]}))
+        assigned_gpu=${available_gpus[$gpu_idx]}
         
         # 清理编码器名称
-        local img_enc_clean=$(echo "$img_encoder" | tr ':/' '_')
-        local txt_enc_clean=$(echo "$txt_encoder" | tr ':/' '_')
-        local config_name="${img_enc_clean}_${txt_enc_clean}"
+        img_enc_clean=$(echo "$img_encoder" | tr ':/' '_')
+        txt_enc_clean=$(echo "$txt_encoder" | tr ':/' '_')
+        config_name="${img_enc_clean}_${txt_enc_clean}"
         
         print_info "为配置 $config_name 分配 GPU $assigned_gpu"
         
         # 等待GPU可用
         wait_for_gpu $assigned_gpu
         
+        # 获取配置文件信息（如果使用配置文件模式）
+        config_file_info=""
+        if [ -n "$CONFIG_FILE" ] && [ -f "$CONFIG_FILE" ]; then
+            # 使用配置文件模式，传递配置文件路径和索引
+            if [ -n "$config_file_idx" ]; then
+                config_file_info="${CONFIG_FILE}|${config_file_idx}"
+            else
+                config_file_info="${CONFIG_FILE}|${config_idx}"
+            fi
+        fi
+        
         # 在后台运行训练
-        run_single_config "$img_encoder" "$txt_encoder" "$assigned_gpu" &
-        local pid=$!
+        run_single_config "$img_encoder" "$txt_encoder" "$assigned_gpu" "$config_file_info" &
+        pid=$!
         pids[$config_name]=$pid
         gpu_assignments[$config_name]=$assigned_gpu
         config_names[$config_name]="$img_encoder|$txt_encoder"
@@ -351,12 +472,12 @@ PYTHON_EOF
     print_info "等待所有训练任务完成..."
     print_info "=========================================="
     
-    local failed_configs=()
-    local success_configs=()
+    failed_configs=()
+    success_configs=()
     
     for config_name in "${!pids[@]}"; do
-        local pid=${pids[$config_name]}
-        local gpu=${gpu_assignments[$config_name]}
+        pid=${pids[$config_name]}
+        gpu=${gpu_assignments[$config_name]}
         
         print_info "等待配置 $config_name 完成 (PID: $pid, GPU: $gpu)..."
         

@@ -1,0 +1,107 @@
+{
+  "class_names": [
+    "Acetabular Loosening",
+    "Dislocation",
+    "Fracture",
+    "Good Place",
+    "Infection",
+    "Native Hip",
+    "Spacer",
+    "Stem Loosening",
+    "Wear"
+  ],
+  "prompts": {
+    "Acetabular Loosening": "The acetabular cup shows signs of loosening, demonstrated by radiolucent lines, migration, or changes at the bone–implant interface.",
+    "Dislocation": "The prosthetic hip joint has lost congruency, resulting in dislocation of the hip prosthesis with the femoral head displaced out of the acetabular cup.",
+    "Fracture": "There is discontinuity of the cortical bone surrounding the hip prosthesis with angulation or deformity, indicative of a periprosthetic fracture adjacent to the implant.",
+    "Good Place": "A well-functioning hip prosthesis with symmetrical joint space and stable component fixation. The surrounding bone shows no signs of aggressive osteolysis, wear-induced scalloping, or particulate debris. Implant appears in a neutral, non-deforming position.",
+    "Infection": "There is evidence of periprosthetic joint infection, suggested by findings such as irregular osteolysis, periosteal reaction, soft tissue swelling or fluid collections",
+    "Native Hip": "This represents a native hip joint without prosthetic components, demonstrating normal osseous and joint anatomy.",
+    "Spacer": "A temporary antibiotic spacer is present within the hip joint, typically used during staged revision arthroplasty to maintain space and deliver local antibiotics.",
+    "Stem Loosening": "The femoral stem demonstrates signs of loosening, including radiolucent lines, subsidence, or migration along the bone–implant interface.",
+    "Wear": "Wear debris is present around the prosthetic components, accompanied by adjacent bone resorption or asymmetric joint space narrowing consistent with prosthesis wear and potential osteolysis."
+  },
+  "best_accuracy": 0.7492260061919505,
+  "optimization_history": [
+    {
+      "round": 1,
+      "class": "Good Place",
+      "old_desc": "The hip prosthesis is in an appropriate position with proper alignment and no evidence of loosening, migration, or malposition.",
+      "new_desc": "A well-positioned hip prosthesis with smooth, well-defined margins. No irregular osteolysis, periosteal reaction, or soft tissue swelling. Cortical bone appears intact and stable around the implant.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 2,
+      "class": "Good Place",
+      "old_desc": "The hip prosthesis is in an appropriate position with proper alignment and no evidence of loosening, migration, or malposition.",
+      "new_desc": "A stable hip prosthesis with normal alignment and clear, regular bone-prosthesis interfaces. The surrounding cortical bone is smooth and continuous, and adjacent soft tissues appear normal without swelling or fluid collections.",
+      "result": "failed",
+      "improvement": 0.0
+    },
+    {
+      "round": 3,
+      "class": "Good Place",
+      "old_desc": "The hip prosthesis is in an appropriate position with proper alignment and no evidence of loosening, migration, or malposition.",
+      "new_desc": "Optimal prosthesis position with uniform, narrow lucency at the bone-cement interface. Bone margins are smooth and sclerotic, with no periosteal reaction, aggressive osteolysis, or soft tissue abnormalities.",
+      "result": "success",
+      "improvement": 0.009287925696594534
+    },
+    {
+      "round": 4,
+      "class": "Good Place",
+      "old_desc": "Optimal prosthesis position with uniform, narrow lucency at the bone-cement interface. Bone margins are smooth and sclerotic, with no periosteal reaction, aggressive osteolysis, or soft tissue abnormalities.",
+      "new_desc": "A properly aligned hip prosthesis exhibiting a stable, non-progressive lucent line less than 2mm. There is no scalloping, periosteal new bone formation, or effusion. The surrounding bone appears normal.",
+      "result": "success",
+      "improvement": 0.006191950464396245
+    },
+    {
+      "round": 5,
+      "class": "Good Place",
+      "old_desc": "A properly aligned hip prosthesis exhibiting a stable, non-progressive lucent line less than 2mm. There is no scalloping, periosteal new bone formation, or effusion. The surrounding bone appears normal.",
+      "new_desc": "Correctly positioned hip prosthesis. It shows a thin, uniform radiolucent line at the interface without expansion over time. The bone appears healthy with no signs of destruction, reactive new bone, or soft tissue inflammation.",
+      "result": "failed",
+      "improvement": -0.01547987616099078
+    },
+    {
+      "round": 6,
+      "class": "Good Place",
+      "old_desc": "A properly aligned hip prosthesis exhibiting a stable, non-progressive lucent line less than 2mm. There is no scalloping, periosteal new bone formation, or effusion. The surrounding bone appears normal.",
+      "new_desc": "A hip prosthesis demonstrating successful osseointegration with a stable bone-implant interface. There is no progressive osteolysis, periosteal elevation, or abnormal soft tissue density. The radiographic findings are consistent with a well-fixed, non-infected implant.",
+      "result": "failed",
+      "improvement": -0.01547987616099078
+    },
+    {
+      "round": 7,
+      "class": "Good Place",
+      "old_desc": "A properly aligned hip prosthesis exhibiting a stable, non-progressive lucent line less than 2mm. There is no scalloping, periosteal new bone formation, or effusion. The surrounding bone appears normal.",
+      "new_desc": "Well-fixed hip prosthesis in anatomical position. The bone-cement interface shows a thin, non-expanding lucency. There is absence of destructive osteolysis, periosteal reaction, or soft tissue swelling, which are all key negative findings against infection.",
+      "result": "success",
+      "improvement": 0.04024767801857587
+    },
+    {
+      "round": 8,
+      "class": "Good Place",
+      "old_desc": "Well-fixed hip prosthesis in anatomical position. The bone-cement interface shows a thin, non-expanding lucency. There is absence of destructive osteolysis, periosteal reaction, or soft tissue swelling, which are all key negative findings against infection.",
+      "new_desc": "A well-positioned hip prosthesis with a stable bone-implant interface showing a uniform, non-progressive lucency. There is no asymmetric joint space narrowing, focal osteolysis, or radiographically evident wear debris. The periprosthetic bone appears normal.",
+      "result": "failed",
+      "improvement": -0.009287925696594423
+    },
+    {
+      "round": 9,
+      "class": "Good Place",
+      "old_desc": "Well-fixed hip prosthesis in anatomical position. The bone-cement interface shows a thin, non-expanding lucency. There is absence of destructive osteolysis, periosteal reaction, or soft tissue swelling, which are all key negative findings against infection.",
+      "new_desc": "A securely fixed hip prosthesis with normal component alignment and position. The joint space is symmetric and well-maintained, with no evidence of eccentric wear, particle disease, or focal osteolytic lesions.",
+      "result": "failed",
+      "improvement": -0.04024767801857587
+    },
+    {
+      "round": 10,
+      "class": "Good Place",
+      "old_desc": "Well-fixed hip prosthesis in anatomical position. The bone-cement interface shows a thin, non-expanding lucency. There is absence of destructive osteolysis, periosteal reaction, or soft tissue swelling, which are all key negative findings against infection.",
+      "new_desc": "A well-functioning hip prosthesis with symmetrical joint space and stable component fixation. The surrounding bone shows no signs of aggressive osteolysis, wear-induced scalloping, or particulate debris. Implant appears in a neutral, non-deforming position.",
+      "result": "success",
+      "improvement": 0.015479876160990669
+    }
+  ]
+}

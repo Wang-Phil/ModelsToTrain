@@ -283,33 +283,59 @@ class CrossStarBlock(nn.Module):
         return x_out
 
 
-class LightSKBlock(nn.Module):
+class SelectiveKernelBlock(nn.Module):
     """
-    轻量级自适应选择性卷积块 (Lightweight Selective Kernel Block)
-    核心功能：动态选择最佳的感受野尺度 (3x3 vs 7x7)
+    通用自适应选择性卷积块 (Selective Kernel Block)
+    支持任意数量的多尺度分支，动态选择最佳的感受野尺度
+    
+    Args:
+        dim: 输入维度
+        mlp_ratio: MLP扩展比例
+        drop_path: DropPath率
+        with_attn: 是否使用空间注意力（暂未实现）
+        kernel_sizes: 卷积核尺寸列表，例如 [3, 7] 表示使用 3x3 和 7x7 两个分支
+        use_dilation: 是否使用空洞卷积实现大感受野（True）或直接使用大卷积核（False）
     """
-    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
+    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False, 
+                 kernel_sizes=None, use_dilation=True):
         super().__init__()
+        # 使用 None 作为默认值，避免可变默认参数的问题
+        if kernel_sizes is None:
+            kernel_sizes = [3, 7]
         self.dim = dim
         self.mlp_ratio = mlp_ratio
+        self.num_branches = len(kernel_sizes)
+        self.kernel_sizes = kernel_sizes
         
         # 1. 通道降维比例 (用于注意力计算的 bottleneck)
         reduction = 4
         hidden_dim = max(dim // reduction, 32)
 
         # 2. 定义多尺度分支 (全部使用 DWConv 以节省参数)
-        # 分支 A: 3x3 (Local)
-        self.conv_3x3 = nn.Sequential(
-            nn.Conv2d(dim, dim, 3, padding=1, groups=dim, bias=False),
-            nn.BatchNorm2d(dim),
-            nn.ReLU6()
-        )
-        # 分支 B: 3x3 dilation=3 (Context, 感受野=7x7)
-        self.conv_7x7 = nn.Sequential(
-            nn.Conv2d(dim, dim, 3, padding=3, dilation=3, groups=dim, bias=False),
-            nn.BatchNorm2d(dim),
-            nn.ReLU6()
-        )
+        self.branches = nn.ModuleList()
+        for ks in kernel_sizes:
+            if use_dilation and ks > 3:
+                # 使用空洞卷积实现大感受野（更节省参数）
+                # 3x3 dilation=1 -> 感受野 3x3
+                # 3x3 dilation=2 -> 感受野 5x5
+                # 3x3 dilation=3 -> 感受野 7x7
+                # 3x3 dilation=4 -> 感受野 9x9
+                dilation = (ks - 1) // 2
+                padding = dilation
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, 3, padding=padding, dilation=dilation, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6()
+                )
+            else:
+                # 直接使用指定大小的卷积核
+                padding = ks // 2
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, ks, padding=padding, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6()
+                )
+            self.branches.append(branch)
 
         # 3. 自适应注意力生成器 (Adaptive Attention)
         self.gap = nn.AdaptiveAvgPool2d(1)
@@ -317,7 +343,7 @@ class LightSKBlock(nn.Module):
             nn.Conv2d(dim, hidden_dim, 1, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU6(),
-            nn.Conv2d(hidden_dim, dim * 2, 1, bias=False) # 输出两个分支的权重
+            nn.Conv2d(hidden_dim, dim * self.num_branches, 1, bias=False) # 输出所有分支的权重
         )
         self.softmax = nn.Softmax(dim=1)
 
@@ -330,42 +356,189 @@ class LightSKBlock(nn.Module):
             nn.ReLU6(),
             ConvBN(int(dim * mlp_ratio), dim, 1, with_bn=True)
         )
+
+        self.sa = SpatialAttention(kernel_size=7)
+        self.grn = GRN(dim=dim)
         
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
-        # 5. 空间注意力精炼 (依然保留，作为辅助)
-        self.sa = SpatialAttention(kernel_size=7)
-
     def forward(self, x):
         input = x
-        x = self.sa(x)
         # --- SK Unit Start ---
-        # 1. 并行计算两个尺度
-        feat_3 = self.conv_3x3(x)
-        feat_7 = self.conv_7x7(x)
+        # 1. 并行计算所有尺度的特征
+        x = self.sa(x)
+        branch_features = []
+        for branch in self.branches:
+            branch_features.append(branch(x))
         
         # 2. 特征相加，计算全局描述符
-        feat_sum = feat_3 + feat_7
+        feat_sum = sum(branch_features)
         attn_vec = self.gap(feat_sum) # [B, C, 1, 1]
         
-        # 3. 生成权重 [B, 2*C, 1, 1] -> 变形为 [B, 2, C, 1, 1]
+        # 3. 生成权重 [B, num_branches*C, 1, 1] -> 变形为 [B, num_branches, C, 1, 1]
         attn_weights = self.fc(attn_vec)
         B, _, H, W = x.shape
-        attn_weights = attn_weights.view(B, 2, self.dim, 1, 1)
-        attn_weights = self.softmax(attn_weights) # 在两个分支间归一化
+        attn_weights = attn_weights.view(B, self.num_branches, self.dim, 1, 1)
+        attn_weights = self.softmax(attn_weights) # 在所有分支间归一化
         
         # 4. 加权融合 (Soft Attention Fusion)
-        # weight[0] * feat_3 + weight[1] * feat_7
-        x_sk = (attn_weights[:, 0] * feat_3) + (attn_weights[:, 1] * feat_7)
+        x_sk = sum(attn_weights[:, i] * branch_features[i] for i in range(self.num_branches))
         # --- SK Unit End ---
-
+        
         x = self.proj(x_sk)
-
+        x = self.grn(x)
         # FFN
         x = x + self.drop_path(self.mlp(x))
 
         x = input + self.drop_path(x)
         return x
+
+
+class LightSKBlock(nn.Module):
+    """
+    轻量级自适应选择性卷积块 (Lightweight Selective Kernel Block)
+    核心功能：动态选择最佳的感受野尺度 (1x1 vs 3x3)
+    使用最佳组合：1x1 + 3x3 双分支
+    """
+    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
+        super().__init__()
+        # 使用最佳组合：1x1 + 3x3
+        self.sk_block = SelectiveKernelBlock(
+            dim=dim, 
+            mlp_ratio=mlp_ratio, 
+            drop_path=drop_path, 
+            with_attn=with_attn,
+            kernel_sizes=[1, 3],
+            use_dilation=True
+        )
+
+    def forward(self, x):
+        return self.sk_block(x)
+
+
+
+# ==========================================
+# Selective Kernel Unit（多尺度分支 + 自适应权重）
+# - 兼顾轻量：使用 depthwise conv branches，然后基于 GAP 做分支权重
+# ==========================================
+class SelectiveKernelUnit(nn.Module):
+    def __init__(self, dim, kernel_sizes=(1, 3), use_dilation=True, reduction=4):
+        super().__init__()
+        self.dim = dim
+        self.kernel_sizes = kernel_sizes
+        self.num_branches = len(kernel_sizes)
+
+        # branches: depthwise convs with different kernel/dilation
+        self.branches = nn.ModuleList()
+        for ks in kernel_sizes:
+            if use_dilation and ks > 3:
+                dilation = (ks - 1) // 2
+                padding = dilation
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, 3, padding=padding, dilation=dilation, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6(inplace=True)
+                )
+            else:
+                padding = ks // 2
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, ks, padding=padding, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6(inplace=True)
+                )
+            self.branches.append(branch)
+
+        # attention generator
+        hidden_dim = max(dim // reduction, 32)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Conv2d(dim, hidden_dim, 1, bias=False),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU6(inplace=True),
+            nn.Conv2d(hidden_dim, dim * self.num_branches, 1, bias=False)
+        )
+        self.softmax = nn.Softmax(dim=1)
+
+        # projection after fusion (pointwise)
+        self.proj = ConvBN(dim, dim, 1, with_bn=True)
+
+        
+    def forward(self, x):
+        # parallel branch features
+        branch_feats = [b(x) for b in self.branches]  # list of [B, C, H, W]
+        feat_sum = sum(branch_feats)                  # fusion for global descriptor
+        attn = self.gap(feat_sum)                     # [B, C, 1, 1]
+        attn_weights = self.fc(attn)                  # [B, num_branches*C, 1, 1]
+        B = x.shape[0]
+        attn_weights = attn_weights.view(B, self.num_branches, self.dim, 1, 1)
+        attn_weights = self.softmax(attn_weights)     # softmax over branches
+        # weighted sum
+        fused = sum(attn_weights[:, i] * branch_feats[i] for i in range(self.num_branches))
+        out = self.proj(fused)
+        return out
+
+
+class SKDWConv(nn.Module):
+    """
+    SK-style Multi-Scale Depthwise Convolution
+    Designed for StarNet
+    """
+    def __init__(self, dim, kernel_sizes=(3, 5, 7), use_dilation=True, reduction=4):
+        super().__init__()
+        self.dim = dim
+        self.num_branches = len(kernel_sizes)
+
+        # 多尺度 DWConv 分支
+        self.branches = nn.ModuleList()
+        for ks in kernel_sizes:
+            if use_dilation and ks > 3:
+                dilation = (ks - 1) // 2
+                padding = dilation
+                self.branches.append(
+                    nn.Sequential(
+                        nn.Conv2d(dim, dim, 3, padding=padding,
+                                  dilation=dilation, groups=dim, bias=False),
+                        nn.BatchNorm2d(dim),
+                        nn.ReLU6()
+                    )
+                )
+            else:
+                padding = ks // 2
+                self.branches.append(
+                    nn.Sequential(
+                        nn.Conv2d(dim, dim, ks, padding=padding,
+                                  groups=dim, bias=False),
+                        nn.BatchNorm2d(dim),
+                        nn.ReLU6()
+                    )
+                )
+
+        # SK Attention（轻量化）
+        hidden_dim = max(dim // reduction, 32)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Conv2d(dim, hidden_dim, 1, bias=False),
+            nn.ReLU6(),
+            nn.Conv2d(hidden_dim, dim * self.num_branches, 1, bias=False)
+        )
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        # 并行多尺度特征
+        feats = [b(x) for b in self.branches]
+
+        # 全局描述
+        feat_sum = sum(feats)
+        attn = self.gap(feat_sum)
+        attn = self.fc(attn)
+
+        B, _, _, _ = attn.shape
+        attn = attn.view(B, self.num_branches, self.dim, 1, 1)
+        attn = self.softmax(attn)
+
+        # 加权融合
+        out = sum(attn[:, i] * feats[i] for i in range(self.num_branches))
+        return out
 
 
 
@@ -390,26 +563,159 @@ class Block(nn.Module):
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # 3. 空间注意力模块（已注释）
-        self.with_attn = with_attn
-        self.sa = SpatialAttention(kernel_size=7)
-        mid_dim = mlp_ratio * dim
-        self.grn = GRN(dim=mid_dim)
+        # self.with_attn = with_attn
+        # self.sa = SpatialAttention(kernel_size=7)
+        # mid_dim = mlp_ratio * dim
+        # self.grn = GRN(dim=mid_dim)
 
     def forward(self, x):
         input = x
         # if self.with_attn:
-        x = self.sa(x)
+        # x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
         x = self.act(x1) * x2
-        x = self.grn(x)
+        # x = self.grn(x)
         x = self.dwconv2(self.g(x))
         
         x = input + self.drop_path(x)
         return x
 
+# --- 1. 完整的 Selective Kernel 单元 ---
+class CompleteSKUnit(nn.Module):
+    """
+    严格遵循 SKNet 的 Split -> Fuse -> Select 流程
+    """
+    def __init__(self, dim, kernel_sizes=[3, 5], reduction=4):
+        super().__init__()
+        self.dim = dim
+        self.num_branches = len(kernel_sizes)
+        
+        # --- Split 阶段: 构建多尺度分支 ---
+        self.branches = nn.ModuleList()
+        for ks in kernel_sizes:
+            # 使用 dilation 来模拟大核，减少参数量
+            # 3x3 (dil=1) -> 3x3
+            # 3x3 (dil=2) -> 5x5
+            # 3x3 (dil=3) -> 7x7
+            dilation = 1 if ks == 3 else (ks - 1) // 2
+            padding = dilation
+            
+            branch = nn.Sequential(
+                nn.Conv2d(dim, dim, kernel_size=3, padding=padding, dilation=dilation, groups=dim, bias=False),
+                nn.BatchNorm2d(dim),
+                nn.ReLU6()
+            )
+            self.branches.append(branch)
+            
+        # --- Fuse & Select 阶段: 自适应注意力 ---
+        hidden_dim = max(dim // reduction, 32)
+        
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc_reduce = nn.Sequential(
+            nn.Conv2d(dim, hidden_dim, 1, bias=False),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU6()
+        )
+        
+        # 输出维度是 branches * dim，用于给每个分支的每个通道生成权重
+        self.fc_expand = nn.Conv2d(hidden_dim, dim * self.num_branches, 1, bias=False)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        
+        # 1. Split: 计算各分支特征
+        feats = [branch(x) for branch in self.branches] # List of [B, C, H, W]
+        # 堆叠以便后续计算: [B, num_branches, C, H, W]
+        feats_stack = torch.stack(feats, dim=1)
+        
+        # 2. Fuse: 元素级相加，汇聚信息
+        U = torch.sum(feats_stack, dim=1) # [B, C, H, W]
+        
+        # 3. Squeeze: 全局描述符
+        s = self.gap(U) # [B, C, 1, 1]
+        
+        # 4. Excitation: 生成权重
+        z = self.fc_reduce(s) 
+        weights = self.fc_expand(z) # [B, num_branches * C, 1, 1]
+        
+        # 变形为 [B, num_branches, C, 1, 1] 以便进行 Softmax
+        weights = weights.view(batch_size, self.num_branches, self.dim, 1, 1)
+        weights = self.softmax(weights)
+        
+        # 5. Select: 加权融合
+        # feats_stack: [B, branches, C, H, W]
+        # weights:     [B, branches, C, 1, 1]
+        # 广播机制会自动处理 H, W 维度
+        V = torch.sum(feats_stack * weights, dim=1) # [B, C, H, W]
+        
+        return V
+
+# --- 2. SK 融合的 StarNet Block ---
+class SKStarBlock(nn.Module):
+    def __init__(self, dim, mlp_ratio=3, drop_path=0.):
+        super().__init__()
+        
+        # 隐藏层维度
+        mid_dim = int(dim * mlp_ratio)
+        
+        # ===========================
+        # 分支 1: 静态内容分支 (Content)
+        # 传统的 StarNet 做法，使用 7x7 DWConv 提供大感受野背景
+        # ===========================
+        self.dw_content = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=True)
+        self.f_content = ConvBN(dim, mid_dim, 1, with_bn=False) # 升维
+        
+        # ===========================
+        # 分支 2: 动态门控分支 (Gating)
+        # 创新点：使用 SK Unit 来决定"关注什么尺度"
+        # ===========================
+        # 定义 SK 需要的尺度，例如 3x3 (细节) 和 5x5 (中等上下文)
+        self.sk_unit = CompleteSKUnit(dim, kernel_sizes=[3, 9])
+        self.f_gate = ConvBN(dim, mid_dim, 1, with_bn=False)    # 升维
+        
+        # ===========================
+        # Star Operation 后处理
+        # ===========================
+        self.act = nn.ReLU6()
+        # self.grn = GRN(mid_dim) # 在高维空间做 GRN 效果最好
+        self.g = ConvBN(mid_dim, dim, 1, with_bn=True) # 降维回归
+        
+        # 最后的深度卷积（可选，增强局部性）
+        self.dw_final = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=False)
+        
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+        # self.sa = SpatialAttention(kernel_size=7)
+
+    def forward(self, x):
+        input = x
+        # x = self.sa(x)
+        # --- 路径 1: 静态内容 ---
+        x_c = self.dw_content(x)
+        x_c = self.f_content(x_c) # [B, mid_dim, H, W]
+        
+        # --- 路径 2: SK 动态特征 ---
+        x_g = self.sk_unit(x)     # SK 融合后的特征
+        x_g = self.f_gate(x_g)    # [B, mid_dim, H, W]
+        
+        # --- Star Interaction ---
+        # 逻辑：(激活后的内容) * (动态门控)
+        # SK 模块生成的特征作为一种复杂的、多尺度的 Attention Map
+        # 来加权筛选静态分支提取的特征
+        x = self.act(x_c) * x_g
+        
+        # --- 后处理 ---
+        # x = self.grn(x)
+        x = self.g(x)
+        x = self.dw_final(x)
+        
+        x = input + self.drop_path(x)
+        return x
+
 class StarNet_FINAL(nn.Module):
-    def __init__(self, base_dim=32, depths=[3, 3, 12, 5], mlp_ratio=4, drop_path_rate=0.0, num_classes=1000, dropout_rate=0.1, use_attn=None, use_multi_head=False, cls_num_list=None, **kwargs):
+    def __init__(self, base_dim=32, depths=[3, 3, 12, 5], mlp_ratio=4, drop_path_rate=0.0, num_classes=1000, dropout_rate=0.1, use_attn=None, use_multi_head=False, cls_num_list=None, sk_kernel_sizes=None, sk_start_layer=None, **kwargs):
         """
         Args:
             base_dim: 基础维度
@@ -421,6 +727,14 @@ class StarNet_FINAL(nn.Module):
             use_attn: 空间注意力使用策略
             use_multi_head: 是否使用多分类头（ArcFace, CosFace, LDAM, Softmax）
             cls_num_list: 类别数量列表（用于 LDAM），如果为 None 则使用均匀分布
+            sk_kernel_sizes: SK Block 的卷积核尺寸列表，例如 [3, 7] 表示使用 3x3 和 7x7 两个分支
+                            如果为 None，则使用默认的 LightSKBlock (3x3 + 7x7)
+            sk_start_layer: 从哪个layer开始使用Block_SK
+                           0: 所有layer都使用Block_SK (i_layer 0,1,2,3)
+                           1: 从layer 1开始使用Block_SK (i_layer 1,2,3)
+                           2: 从layer 2开始使用Block_SK (i_layer 2,3)
+                           3: 只有layer 3使用Block_SK (i_layer 3)
+                           None: 使用默认策略 (i_layer < 3 使用Block, i_layer >= 3 使用Block_SK)
         """
         super().__init__()
         self.num_classes = num_classes
@@ -436,24 +750,14 @@ class StarNet_FINAL(nn.Module):
             embed_dim = base_dim * 2 ** i_layer
             down_sampler = ConvBN(self.in_channel, embed_dim, 3, 2, 1)
             self.in_channel = embed_dim
-            # 空间注意力机制已注释
-            use_attn_here = True
-            if use_attn is not None:
-                if i_layer < use_attn:
-                    use_attn_here = False
-            else:
-                use_attn_here = False
-            
             # --- Strategy: Hybrid Block Usage ---
-            # Stage 0 & 1 (Shallow): Use Standard Block (低级特征提取)
-            # Stage 2 & 3 (Deep): Use specified Block type (多尺度语义融合)
-            if i_layer < 2:
+            if i_layer < 3:
                 BlockType = Block
             else:
-                BlockType = LightSKBlock
+                BlockType = SKStarBlock
 
             blocks = [
-                BlockType(self.in_channel, mlp_ratio, dpr[cur + i], with_attn=use_attn_here) 
+                BlockType(self.in_channel, mlp_ratio, dpr[cur + i]) 
                 for i in range(depths[i_layer])
             ]
             # blocks = [Block(self.in_channel, mlp_ratio, dpr[cur + i]) for i in range(depths[i_layer])]
@@ -490,11 +794,11 @@ class StarNet_FINAL(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        if isinstance(m, nn.Linear or nn.Conv2d):
+        if isinstance(m, (nn.Linear, nn.Conv2d)):
             trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm or nn.BatchNorm2d):
+        elif isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
@@ -549,13 +853,101 @@ def starnet_s1_final(pretrained=False, **kwargs):
     model = StarNet_FINAL(
         base_dim=24, 
         depths=[2, 2, 8, 3], 
-        use_attn=0,  # 所有stage都使用空间注意力
         **kwargs
     )
-    if pretrained:
-        url = model_urls['starnet_s1']
-        checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["state_dict"], strict=False)
+    # 注意：SK 变体模型暂不支持预训练权重
+    # if pretrained:
+    #     url = model_urls['starnet_s1']
+    #     checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
+    #     model.load_state_dict(checkpoint["state_dict"], strict=False)
+    return model
+
+
+# ============================================
+# SKNet 模型变体（仅保留最佳组合用于向后兼容）
+# ============================================
+
+@register_model
+def starnet_sk_1_3(pretrained=False, **kwargs):
+    """
+    StarNet with SK Block: 1x1 + 3x3 双分支 (最佳组合)
+    参数量: 约 2.9M (基于 S1 配置)
+    注意：此模型与 starnet_s1_final 使用相同的配置，保留用于向后兼容
+    """
+    model = StarNet_FINAL(
+        base_dim=24,
+        depths=[2, 2, 8, 3],
+        use_attn=0,
+        **kwargs
+    )
+    return model
+
+
+# ============================================
+# 消融实验：不同i_layer上使用Block_SK的变体
+# ============================================
+
+@register_model
+def starnet_sk_ablation_all(pretrained=False, **kwargs):
+    """
+    消融实验1：所有layer都使用Block_SK (i_layer 0,1,2,3)
+    参数量: 约 2.9M (基于 S1 配置)
+    """
+    model = StarNet_FINAL(
+        base_dim=24,
+        depths=[2, 2, 8, 3],
+        use_attn=0,
+        sk_start_layer=0,  # 从layer 0开始使用Block_SK（即所有layer都使用）
+        **kwargs
+    )
+    return model
+
+
+@register_model
+def starnet_sk_ablation_last3(pretrained=False, **kwargs):
+    """
+    消融实验2：后面三个layer使用Block_SK (i_layer 1,2,3)
+    参数量: 约 2.9M (基于 S1 配置)
+    """
+    model = StarNet_FINAL(
+        base_dim=24,
+        depths=[2, 2, 8, 3],
+        use_attn=0,
+        sk_start_layer=1,  # 从layer 1开始使用Block_SK（后面三个layer）
+        **kwargs
+    )
+    return model
+
+
+@register_model
+def starnet_sk_ablation_last2(pretrained=False, **kwargs):
+    """
+    消融实验3：后面两个layer使用Block_SK (i_layer 2,3)
+    参数量: 约 2.9M (基于 S1 配置)
+    """
+    model = StarNet_FINAL(
+        base_dim=24,
+        depths=[2, 2, 8, 3],
+        use_attn=0,
+        sk_start_layer=2,  # 从layer 2开始使用Block_SK（后面两个layer）
+        **kwargs
+    )
+    return model
+
+
+@register_model
+def starnet_sk_ablation_last1(pretrained=False, **kwargs):
+    """
+    消融实验4：只有最后一个layer使用Block_SK (i_layer 3)
+    参数量: 约 2.9M (基于 S1 配置)
+    """
+    model = StarNet_FINAL(
+        base_dim=24,
+        depths=[2, 2, 8, 3],
+        use_attn=0,
+        sk_start_layer=3,  # 只有layer 3使用Block_SK
+        **kwargs
+    )
     return model
 
 

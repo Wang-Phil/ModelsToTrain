@@ -12,12 +12,12 @@ StarNet 空间注意力变体模型
 # from timm.models.layers import DropPath, trunc_normal_
 # from timm.models.registry import register_model
 
-# model_urls = {
-#     "starnet_s1": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s1.pth.tar",
-#     "starnet_s2": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s2.pth.tar",
-#     "starnet_s3": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s3.pth.tar",
-#     "starnet_s4": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s4.pth.tar",
-# }
+model_urls = {
+    "starnet_s1": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s1.pth.tar",
+    "starnet_s2": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s2.pth.tar",
+    "starnet_s3": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s3.pth.tar",
+    "starnet_s4": "https://github.com/ma-xu/Rewrite-the-Stars/releases/download/checkpoints_v1/starnet_s4.pth.tar",
+}
 
 
 # class ConvBN(torch.nn.Sequential):
@@ -194,6 +194,198 @@ class SpatialAttention(nn.Module):
         return x * scale
 # ==========================================
 
+# ==========================================
+# 基础组件：ConvBN（需要在其他类之前定义）
+# ==========================================
+class ConvBN(torch.nn.Sequential):
+    def __init__(self, in_planes, out_planes, kernel_size=1, stride=1, padding=0, dilation=1, groups=1, with_bn=True):
+        super().__init__()
+        self.add_module('conv', torch.nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, dilation, groups))
+        if with_bn:
+            self.add_module('bn', torch.nn.BatchNorm2d(out_planes))
+            torch.nn.init.constant_(self.bn.weight, 1)
+            torch.nn.init.constant_(self.bn.bias, 0)
+
+# ==========================================
+# 辅助类：深度可分离卷积的组件 (DW Only)
+# ==========================================
+class DWConv(nn.Module):
+    def __init__(self, dim, kernel_size=3):
+        super().__init__()
+        self.conv = nn.Conv2d(dim, dim, kernel_size, 1, kernel_size // 2, groups=dim, bias=False)
+        self.bn = nn.BatchNorm2d(dim)
+    
+    def forward(self, x):
+        return self.bn(self.conv(x))
+
+class MultiScaleFusionBlock(nn.Module):
+    """
+    [替代方案] 多尺度并行融合模块 (Inception Style)
+    去除交叉星乘，改为 "并行卷积 + 拼接 + 融合"
+    """
+    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
+        super().__init__()
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
+        
+        # 1. 维度定义
+        # 我们需要将特征投影到高维，然后切分
+        self.branch_dim = (dim * mlp_ratio) // 2 
+        self.total_exp_dim = self.branch_dim * 2  # 这里只需要2倍分支维度，不需要4倍了，因为不做复杂的交叉
+
+        # 2. 初始处理
+        self.dwconv_in = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=True)
+        
+        # 3. 统一投影与扩张
+        self.proj_1x1 = ConvBN(dim, self.total_exp_dim, 1, with_bn=False)
+
+        # 4. 双尺度并行处理 (Depthwise)
+        # Branch A: 3x3 捕捉细节
+        self.dw_local = DWConv(self.branch_dim, kernel_size=3) 
+        # Branch B: 11x11 捕捉全局 (使用大核替代 CrossStar 的 Context 分支)
+        self.dw_context = DWConv(self.branch_dim, kernel_size=7) 
+
+        # 5. 融合层 (1x1 Conv)
+        # 输入是 cat(local, context) -> 维度恢复到 dim
+        self.fusion = ConvBN(self.total_exp_dim, dim, 1, with_bn=True)
+        
+        # 6. 输出处理
+        self.dwconv_out = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=False)
+        self.act = nn.ReLU6()
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+        # 7. 空间注意力 (按照之前的建议放在末端)
+        self.sa = SpatialAttention(kernel_size=7)
+        
+        # GRN (全局响应归一化) - 放在融合后增强特征竞争
+        self.grn = GRN(dim=dim)
+
+    def forward(self, x):
+        input = x
+        x = self.dwconv_in(x)
+
+        # 1. 投影
+        x_expanded = self.proj_1x1(x)
+        
+        # 2. 切分 (Split)
+        x_local, x_context = torch.split(x_expanded, self.branch_dim, dim=1)
+
+        # 3. 并行多尺度提取
+        x_local = self.dw_local(x_local)      # [B, C/2, H, W]
+        x_context = self.dw_context(x_context) # [B, C/2, H, W]
+
+        # 4. 激活 (因为去掉了交叉乘法带来的非线性，这里建议加个激活)
+        x_local = self.act(x_local)
+        x_context = self.act(x_context)
+
+        # 5. 【关键修改】拼接 (Concatenate) 代替 乘法
+        # 此时网络同时拥有了 3x3 的细节和 11x11 的语境
+        x_fused = torch.cat([x_local, x_context], dim=1) 
+
+        # 6. 融合 (Fusion)
+        x_out = self.fusion(x_fused)
+        
+        # 7. GRN 增强特征
+        x_out = self.grn(x_out)
+
+        # 8. 输出投影
+        x_out = self.dwconv_out(x_out)
+
+        # 9. 空间注意力精炼 (如果有)
+        x_out = self.sa(x_out)
+
+        # 10. 残差
+        x_out = input + self.drop_path(x_out)
+        
+        return x_out
+    """
+    [优化版] Parameter-Efficient Cross-Star Block
+    核心思想：
+    1. 1x1 Conv 统一升维 (Channel Mixing)
+    2. Split 分割特征
+    3. DW Conv 提取多尺度特征 (Spatial Mixing)
+    4. 交叉相乘
+    """
+    def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
+        super().__init__()
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
+        
+        # 中间总维度 (你的逻辑是 mid_dim * 2 最终融合，所以这里我们需要生成 4 个分支)
+        # 每个分支的维度
+        self.branch_dim = (dim * mlp_ratio) // 2 
+        # 内部总通道数 = 4个分支 * branch_dim
+        self.total_exp_dim = self.branch_dim * 4 
+
+        # 1. 初始深度卷积 (保持不变)
+        self.dwconv_in = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=True)
+
+        # 2. 统一投影层 (替代原有的 f3_A, f3_B, f7_A, f7_B 四个独立卷积)
+        # 使用 1x1 卷积极其高效地完成通道扩展
+        self.proj_1x1 = ConvBN(dim, self.total_exp_dim, 1, with_bn=False)
+
+        # 3. 多尺度深度卷积 (Depthwise Convolutions)
+        # 注意：这里只做空间处理，不做通道融合，参数极少
+        self.dw_3x3 = DWConv(self.branch_dim * 2, kernel_size=3) # 处理 A和B 的 3x3 部分
+        self.dw_7x7 = DWConv(self.branch_dim * 2, kernel_size=1) # 处理 A和B 的 7x7 部分
+        
+
+        # 4. 融合层
+        # 输入是 concatenate(y12, y21)，维度是 branch_dim * 2
+        self.g = ConvBN(self.branch_dim * 2, dim, 1, with_bn=True)
+        
+        # 5. 输出投影
+        self.dwconv_out = ConvBN(dim, dim, 7, 1, 3, groups=dim, with_bn=False)
+        
+        self.act = nn.ReLU6()
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+         # 空间注意力模块
+        self.sa = SpatialAttention(kernel_size=7)
+
+        # GRN 保持不变
+        self.grn_y12 = GRN(dim=self.branch_dim)
+        self.grn_y21 = GRN(dim=self.branch_dim)
+
+    def forward(self, x):
+        input = x
+        x = self.dwconv_in(x)
+
+        # 1. 统一升维并切分
+        # [B, total_exp_dim, H, W]
+        x_expanded = self.proj_1x1(x)
+        
+        # 将特征分为两组：一组用于3x3路径，一组用于7x7路径
+        # chunks_3x3 包含 (3A, 3B), chunks_7x7 包含 (7A, 7B)
+        x_3x3_all, x_7x7_all = torch.split(x_expanded, self.branch_dim * 2, dim=1)
+
+        # 2. 并行空间处理 (Depthwise)
+        x_3x3_all = self.dw_3x3(x_3x3_all)
+        x_7x7_all = self.dw_7x7(x_7x7_all)
+
+        # 3. 再次切分以进行交叉乘法
+        x_3A, x_3B = torch.split(x_3x3_all, self.branch_dim, dim=1)
+        x_7A, x_7B = torch.split(x_7x7_all, self.branch_dim, dim=1)
+
+        # 4. 交叉星乘 (Cross-Star Operation) - 逻辑完全保持不变
+        # Branch 1: Local (3A) 激活 * Context (7B) 特征
+        y12 = self.act(x_3A) * x_7B
+        y12 = self.grn_y12(y12)
+
+        # Branch 2: Context (7A) 激活 * Local (3B) 特征
+        y21 = self.act(x_7A) * x_3B
+        y21 = self.grn_y21(y21)
+
+        # 5. 拼接
+        x_out = torch.cat((y12, y21), dim=1)
+
+        # 6. 融合与输出
+        x_out = self.dwconv_out(self.g(x_out))
+        # x = self.sa(x)
+        x_out = input + self.drop_path(x_out)
+        
+        return x_out
+
 class GRN(nn.Module):
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
@@ -230,8 +422,6 @@ class GRN(nn.Module):
 class CrossStarBlock(nn.Module):
     """
     [D - 基线] Inception-style Cross-Star Block
-    实现了 Y = Concat((x_{3A} * x_{7B}), (x_{7A} * x_{3B}))
-    交叉星乘：局部细节调制全局语境，全局语境校正局部细节
     """
     def __init__(self, dim, mlp_ratio=3, drop_path=0.,with_attn=False):
         super().__init__()
@@ -293,17 +483,70 @@ class CrossStarBlock(nn.Module):
         return x_out
 
 
-
-class ConvBN(torch.nn.Sequential):
-    def __init__(self, in_planes, out_planes, kernel_size=1, stride=1, padding=0, dilation=1, groups=1, with_bn=True):
+# ==========================================
+# Selective Kernel Unit（多尺度分支 + 自适应权重）
+# - 兼顾轻量：使用 depthwise conv branches，然后基于 GAP 做分支权重
+# ==========================================
+class SelectiveKernelUnit(nn.Module):
+    def __init__(self, dim, kernel_sizes=(1, 3), use_dilation=True, reduction=4):
         super().__init__()
-        self.add_module('conv', torch.nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, dilation, groups))
-        if with_bn:
-            self.add_module('bn', torch.nn.BatchNorm2d(out_planes))
-            torch.nn.init.constant_(self.bn.weight, 1)
-            torch.nn.init.constant_(self.bn.bias, 0)
+        self.dim = dim
+        self.kernel_sizes = kernel_sizes
+        self.num_branches = len(kernel_sizes)
+
+        # branches: depthwise convs with different kernel/dilation
+        self.branches = nn.ModuleList()
+        for ks in kernel_sizes:
+            if use_dilation and ks > 3:
+                dilation = (ks - 1) // 2
+                padding = dilation
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, 3, padding=padding, dilation=dilation, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6(inplace=True)
+                )
+            else:
+                padding = ks // 2
+                branch = nn.Sequential(
+                    nn.Conv2d(dim, dim, ks, padding=padding, groups=dim, bias=False),
+                    nn.BatchNorm2d(dim),
+                    nn.ReLU6(inplace=True)
+                )
+            self.branches.append(branch)
+
+        # attention generator
+        hidden_dim = max(dim // reduction, 32)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Conv2d(dim, hidden_dim, 1, bias=False),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU6(inplace=True),
+            nn.Conv2d(hidden_dim, dim * self.num_branches, 1, bias=False)
+        )
+        self.softmax = nn.Softmax(dim=1)
+
+        # projection after fusion (pointwise)
+        self.proj = ConvBN(dim, dim, 1, with_bn=True)
+
+        
+    def forward(self, x):
+        # parallel branch features
+        branch_feats = [b(x) for b in self.branches]  # list of [B, C, H, W]
+        feat_sum = sum(branch_feats)                  # fusion for global descriptor
+        attn = self.gap(feat_sum)                     # [B, C, 1, 1]
+        attn_weights = self.fc(attn)                  # [B, num_branches*C, 1, 1]
+        B = x.shape[0]
+        attn_weights = attn_weights.view(B, self.num_branches, self.dim, 1, 1)
+        attn_weights = self.softmax(attn_weights)     # softmax over branches
+        # weighted sum
+        fused = sum(attn_weights[:, i] * branch_feats[i] for i in range(self.num_branches))
+        out = self.proj(fused)
+        return out
 
 
+# ==========================================
+# 标准Block（使用空间注意力）
+# ==========================================
 class Block(nn.Module):
     def __init__(self, dim, mlp_ratio=3, drop_path=0., with_attn=False):
         super().__init__()
@@ -315,8 +558,7 @@ class Block(nn.Module):
         self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # 3. 空间注意力模块（已注释）
-        # self.with_attn = with_attn
-        self.sa = SpatialAttention(kernel_size=7)
+        self.sa = SpatialAttention(kernel_size=7) if with_attn else nn.Identity()
         mid_dim = mlp_ratio * dim
         self.grn = GRN(dim=mid_dim)
 
@@ -369,12 +611,12 @@ class StarNet_SA(nn.Module):
             # 空间注意力机制已注释
             use_attn_here = True
             if use_attn is not None:
-                if i_layer < use_attn:
+                if i_layer >= use_attn:
                     use_attn_here = False
             else:
                 use_attn_here = False
             
-            if i_layer < 2:
+            if i_layer < 4:
                 BlockType = Block
             else:
                 BlockType = CrossStarBlock
@@ -417,11 +659,11 @@ class StarNet_SA(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        if isinstance(m, nn.Linear or nn.Conv2d):
+        if isinstance(m, (nn.Linear, nn.Conv2d)):
             trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm or nn.BatchNorm2d):
+        elif isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
@@ -499,7 +741,7 @@ def starnet_sa_s2(pretrained=False, **kwargs):
     model = StarNet_SA(
         base_dim=24, 
         depths=[2, 2, 8, 3], 
-        use_attn=1,  # stage 0不使用，stage 1,2,3使用
+        use_attn=1,  # stage 0 使用，
         **kwargs
     )
     if pretrained:
@@ -518,7 +760,7 @@ def starnet_sa_s3(pretrained=False, **kwargs):
     model = StarNet_SA(
         base_dim=24, 
         depths=[2, 2, 8, 3], 
-        use_attn=2,  # stage 0,1不使用，stage 2,3使用
+        use_attn=2,  # 前两个stage使用
         **kwargs
     )
     if pretrained:
@@ -537,7 +779,7 @@ def starnet_sa_s4(pretrained=False, **kwargs):
     model = StarNet_SA(
         base_dim=24, 
         depths=[2, 2, 8, 3], 
-        use_attn=3,  # 只有stage 3使用空间注意力
+        use_attn=3,  # 前三个stage 3使用空间注意力
         **kwargs
     )
     if pretrained:

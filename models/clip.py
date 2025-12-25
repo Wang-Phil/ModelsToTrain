@@ -419,6 +419,24 @@ class CLIPModel(nn.Module):
             embed_dim=embed_dim
         )
     
+    def freeze_encoders(self):
+        """冻结图像和文本编码器，只训练温度参数"""
+        for param in self.image_encoder.parameters():
+            param.requires_grad = False
+        for param in self.text_encoder.parameters():
+            param.requires_grad = False
+        # 确保温度参数可训练
+        self.temperature.requires_grad = True
+        print("✓ 已冻结图像和文本编码器，只训练温度参数")
+    
+    def unfreeze_encoders(self):
+        """解冻图像和文本编码器"""
+        for param in self.image_encoder.parameters():
+            param.requires_grad = True
+        for param in self.text_encoder.parameters():
+            param.requires_grad = True
+        print("✓ 已解冻图像和文本编码器")
+    
     def forward(self, images, texts=None, text_features=None):
         """
         Forward pass
@@ -513,5 +531,3 @@ def create_model(config):
         temperature=config.get('temperature', 0.07)
     )
     return model
-
-

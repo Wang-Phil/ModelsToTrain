@@ -12,17 +12,26 @@
     "augmentation": "standard",
     "num_workers": 4,
     "use_amp": true,
-    "gpu_id": 0,
+    "gpu_id": 8,
     "save_best": true,
     "use_cv": true,
     "n_splits": 5,
+    "random_state": 42,
     "early_stopping_patience": null,
     "early_stopping_min_delta": 0.001,
     "early_stopping_monitor": "val_loss",
     "class_texts_file": "class_texts_hip_prosthesis.json",
     "use_weighted_sampling": true,
     "weight_method": "inverse_freq",
-    "weight_smooth_factor": 4.0
+    "weight_smooth_factor": 1.0,
+    "use_superclip_loss": true,
+    "class_loss_weight": 1.0,
+    "contrastive_loss_weight": 1.0,
+    "use_focal_loss": true,
+    "focal_alpha": 0.25,
+    "focal_gamma": 2.0,
+    "freeze_encoders": false,
+    "pretrained_model_path": "checkpoints/clip_models/resnet18_clip_ViT-B_32/checkpoint_best.pth"
   }
 ]
 

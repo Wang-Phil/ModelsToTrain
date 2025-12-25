@@ -78,18 +78,15 @@ class Block(nn.Module):
         self.f2 = ConvBN(dim, mlp_ratio * dim, 1, with_bn=False)
         self.g = ConvBN(mlp_ratio * dim, dim, 1, with_bn=True)
         self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
-        self.act = nn.ReLU()
+        self.act = nn.ReLU6()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         # 3. 空间注意力模块（已注释）
         self.with_attn = with_attn
-        if with_attn:
-            self.sa = SpatialAttention(kernel_size=7)
-        else:
-            self.sa = None
+        self.sa = SpatialAttention(kernel_size=7)
 
     def forward(self, x):
         input = x
-        if self.with_attn and self.sa is not None:
+        if self.with_attn:
             x = self.sa(x)
         x = self.dwconv(x)
         x1, x2 = self.f1(x), self.f2(x)
