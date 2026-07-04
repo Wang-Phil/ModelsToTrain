@@ -1,0 +1,137 @@
+{
+  "table1": {
+    "split": "test",
+    "reference_macro_auc": 0.9619646541078198,
+    "checks": [
+      {
+        "model": "casgnet",
+        "computed": 0.9619646541078198,
+        "expected": 0.962,
+        "diff": 3.5345892180127514e-05,
+        "ok": true
+      },
+      {
+        "model": "starnet",
+        "computed": 0.951318,
+        "expected": 0.952,
+        "diff": 0.0006819999999999604,
+        "ok": true
+      },
+      {
+        "model": "lsnet_b",
+        "computed": 0.952354,
+        "expected": 0.953,
+        "diff": 0.0006459999999999244,
+        "ok": true
+      },
+      {
+        "model": "densenet121",
+        "computed": 0.956904,
+        "expected": 0.957,
+        "diff": 9.599999999998499e-05,
+        "ok": true
+      },
+      {
+        "model": "resnet18",
+        "computed": 0.951043,
+        "expected": 0.951,
+        "diff": 4.300000000001525e-05,
+        "ok": true
+      },
+      {
+        "model": "resnet50",
+        "computed": 0.916446,
+        "expected": 0.917,
+        "diff": 0.0005540000000000544,
+        "ok": true
+      },
+      {
+        "model": "mobilenetv4_m",
+        "computed": 0.917287,
+        "expected": 0.918,
+        "diff": 0.0007130000000000747,
+        "ok": true
+      },
+      {
+        "model": "googlenet",
+        "computed": 0.902348,
+        "expected": 0.903,
+        "diff": 0.0006519999999999859,
+        "ok": true
+      }
+    ],
+    "expected_casgnet_auc": 0.962,
+    "auc_diff": 3.5345892180127514e-05,
+    "auc_ok": true
+  },
+  "table2": {
+    "split": "val",
+    "reference_macro_auc": 0.9449190318869045,
+    "checks": [
+      {
+        "model": "casgnet",
+        "computed": 0.9449190318869045,
+        "expected": 0.944,
+        "diff": 0.0009190318869045644,
+        "ok": true
+      },
+      {
+        "model": "starnet",
+        "computed": 0.935115,
+        "expected": 0.935,
+        "diff": 0.00011499999999997623,
+        "ok": true
+      },
+      {
+        "model": "lsnet_b",
+        "computed": 0.921679,
+        "expected": 0.922,
+        "diff": 0.0003210000000000157,
+        "ok": true
+      },
+      {
+        "model": "densenet121",
+        "computed": 0.933017,
+        "expected": 0.933,
+        "diff": 1.6999999999933735e-05,
+        "ok": true
+      },
+      {
+        "model": "resnet18",
+        "computed": 0.934257,
+        "expected": 0.934,
+        "diff": 0.0002569999999999517,
+        "ok": true
+      },
+      {
+        "model": "resnet50",
+        "computed": 0.922131,
+        "expected": 0.922,
+        "diff": 0.00013099999999999223,
+        "ok": true
+      },
+      {
+        "model": "mobilenetv4_m",
+        "computed": 0.936386,
+        "expected": 0.936,
+        "diff": 0.00038599999999999746,
+        "ok": true
+      },
+      {
+        "model": "googlenet",
+        "computed": 0.929627,
+        "expected": 0.929,
+        "diff": 0.0006269999999999332,
+        "ok": true
+      }
+    ],
+    "expected_casgnet_auc": 0.944,
+    "auc_diff": 0.0009190318869045644,
+    "auc_ok": true
+  },
+  "cache_dirs": {
+    "table1": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/table1_final_package_original/caches",
+    "table2": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/table2_final_package_original/caches"
+  },
+  "note": "Summary delong_p_value = paired bootstrap p-value for macro OvR AUC (n=2000, seed=42). Per-class delong_p_value uses true binary OVR DeLong test."
+}

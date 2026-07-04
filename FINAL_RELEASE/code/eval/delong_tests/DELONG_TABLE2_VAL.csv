@@ -1,0 +1,8 @@
+baseline,casgnet_macro_auc,baseline_macro_auc,delta_auc,delong_p_value,significant_0.05,casgnet_wins_auc
+starnet,0.944919,0.935115,0.009804,0.321,False,True
+lsnet_b,0.944919,0.921679,0.02324,0.037,True,True
+densenet121,0.944919,0.933017,0.011902,0.414,False,True
+resnet18,0.944919,0.934257,0.010662,0.322,False,True
+resnet50,0.944919,0.922131,0.022788,0.072,False,True
+mobilenetv4_m,0.944919,0.936386,0.008533,0.356,False,True
+googlenet,0.944919,0.929627,0.015292,0.145,False,True
