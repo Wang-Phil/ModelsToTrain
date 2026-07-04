@@ -1,0 +1,17 @@
+{
+  "model": "mobilenetv4_m",
+  "checkpoint": "mobilenetv4_m_ce_only",
+  "split": "val",
+  "n": 240,
+  "repro_acc": "0.871(0.854-0.889)",
+  "repro_auc": "0.895(0.869-0.920)",
+  "sensitivity": "0.581(0.499-0.660)",
+  "specificity": "0.909(0.897-0.923)",
+  "npv": "0.910(0.897-0.925)",
+  "ppv": "0.718(0.644-0.779)",
+  "excel_acc": "0.916(0.896-0.935)",
+  "excel_auc": "0.936(0.915-0.955)",
+  "acc_delta": -0.04500000000000004,
+  "auc_delta": -0.041000000000000036,
+  "match_status": "blocked"
+}

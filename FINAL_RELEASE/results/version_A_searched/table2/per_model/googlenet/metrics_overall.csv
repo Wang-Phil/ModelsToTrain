@@ -1,0 +1,2 @@
+model,checkpoint,split,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+googlenet,googlenet_ce_only,val,240,0.853(0.837-0.871),0.899(0.878-0.920),0.487(0.409-0.567),0.900(0.888-0.912),0.901(0.888-0.914),0.582(0.518-0.652),0.909(0.890-0.925),0.930(0.905-0.951),-0.05600000000000005,-0.031000000000000028,blocked

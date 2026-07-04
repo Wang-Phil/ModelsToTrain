@@ -110,6 +110,14 @@ except ImportError as e:
     PMCCLIP_FULL_AVAILABLE = False
     print(f"Warning: Cannot import PMC-CLIP Full components: {e}")
 
+try:
+    from models.hybrid_pmcclip_biomedclip_coop_sccm import HybridCLIPWithCoOpSCCM
+    from open_clip.src.open_clip import create_model_from_pretrained
+    HYBRID_COOP_SCCM_AVAILABLE = True
+except ImportError as e:
+    HYBRID_COOP_SCCM_AVAILABLE = False
+    print(f"Warning: Cannot import Hybrid PMC-CLIP + BiomedCLIP + CoOp + SCCM components: {e}")
+
 # 尝试导入 yacs，如果没有则使用简单的配置类
 try:
     from yacs.config import CfgNode
@@ -152,7 +160,7 @@ def create_biomedcoop_config(epochs=100, n_ctx=4, ctx_init="a photo of a", csc=F
                             use_focal_loss=False, focal_alpha=0.25, focal_gamma=2.0,
                             class_texts_file=None, use_amp=True,
                             classification_loss_weight=0.5, contrastive_loss_weight=0.5,
-                            distillation_loss_weight=0.0):
+                            distillation_loss_weight=0.0, use_original_clip_resnet50=False):
     """
     创建 BiomedCoOp 配置对象
     
@@ -210,6 +218,7 @@ def create_biomedcoop_config(epochs=100, n_ctx=4, ctx_init="a photo of a", csc=F
     cfg.TRAINER.BIOMEDCOOP.CLASSIFICATION_LOSS_WEIGHT = classification_loss_weight
     cfg.TRAINER.BIOMEDCOOP.CONTRASTIVE_LOSS_WEIGHT = contrastive_loss_weight
     cfg.TRAINER.BIOMEDCOOP.DISTILLATION_LOSS_WEIGHT = distillation_loss_weight
+    cfg.TRAINER.BIOMEDCOOP.USE_ORIGINAL_CLIP_RESNET50 = use_original_clip_resnet50
     
     # CoOp 配置（用于 CLIP、PMC-CLIP、PubMedCLIP）
     cfg.TRAINER.COOP = CfgNode()
@@ -293,9 +302,9 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
     # 处理 DataParallel 包装的情况
     actual_model = model.module if hasattr(model, 'module') else model
     
-    # 检测是否是 biomedcoop_pmcclip 模型
-    # 通过检查模型类型和关键属性来判断
+    # 检测模型类型
     is_biomedcoop_pmcclip = False
+    is_hybrid_coop_sccm = False
     if hasattr(actual_model, '__class__'):
         model_class_name = actual_model.__class__.__name__
         model_module = actual_model.__class__.__module__
@@ -309,6 +318,11 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
               hasattr(actual_model.cfg, 'TRAINER') and
               hasattr(actual_model.cfg.TRAINER, 'BIOMEDCOOP')):
             is_biomedcoop_pmcclip = True
+        # 检查是否是 hybrid_coop_sccm
+        elif 'hybrid_pmcclip_biomedclip_coop_sccm' in model_module and model_class_name == 'HybridCLIPWithCoOpSCCM':
+            is_hybrid_coop_sccm = True
+        elif hasattr(actual_model, 'sccm_lambda') and hasattr(actual_model, 'prompt_learner'):
+            is_hybrid_coop_sccm = True
     
     # 获取损失权重（在循环外部获取，提高效率）
     if hasattr(model, 'classification_loss_weight') and hasattr(model, 'contrastive_loss_weight'):
@@ -364,6 +378,15 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
                     # 统计损失（用于显示）
                     contrastive_loss = torch.tensor(0.0, device=device)  # 占位符
                     loss_distill = torch.tensor(0.0, device=device)  # 占位符
+                elif is_hybrid_coop_sccm:
+                    # hybrid_coop_sccm 返回 (logits, loss_ce, contrastive_loss, loss_sccm, loss_distill)
+                    logits, loss_ce, contrastive_loss, loss_sccm, loss_distill = forward_output
+                    # 计算总损失
+                    loss = (classification_weight * loss_ce +
+                           contrastive_weight * contrastive_loss +
+                           loss_sccm +
+                           distillation_weight * loss_distill)
+                    loss_kdsp = torch.tensor(0.0, device=device)  # 占位符
                 else:
                     # 其他模型返回 (logits, loss_ce, contrastive_loss, loss_distill)
                     logits, loss_ce, contrastive_loss, loss_distill = forward_output
@@ -404,6 +427,15 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
                 # 统计损失（用于显示）
                 contrastive_loss = torch.tensor(0.0, device=device)  # 占位符
                 loss_distill = torch.tensor(0.0, device=device)  # 占位符
+            elif is_hybrid_coop_sccm:
+                # hybrid_coop_sccm 返回 (logits, loss_ce, contrastive_loss, loss_sccm, loss_distill)
+                logits, loss_ce, contrastive_loss, loss_sccm, loss_distill = forward_output
+                # 计算总损失
+                loss = (classification_weight * loss_ce +
+                       contrastive_weight * contrastive_loss +
+                       loss_sccm +
+                       distillation_weight * loss_distill)
+                loss_kdsp = torch.tensor(0.0, device=device)  # 占位符
             else:
                 # 其他模型返回 (logits, loss_ce, contrastive_loss, loss_distill)
                 logits, loss_ce, contrastive_loss, loss_distill = forward_output
@@ -440,6 +472,11 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
             running_loss_kdsp += loss_kdsp.item() if isinstance(loss_kdsp, torch.Tensor) else 0.0
             running_contrastive_loss += 0.0  # biomedcoop_pmcclip 不使用对比损失
             running_loss_distill += 0.0  # biomedcoop_pmcclip 不使用蒸馏损失
+        elif is_hybrid_coop_sccm:
+            running_loss_sccm += loss_sccm.item() if isinstance(loss_sccm, torch.Tensor) else 0.0
+            running_contrastive_loss += contrastive_loss.item() if isinstance(contrastive_loss, torch.Tensor) else 0.0
+            running_loss_distill += loss_distill.item() if isinstance(loss_distill, torch.Tensor) else 0.0
+            running_loss_kdsp += 0.0  # hybrid_coop_sccm 不使用KDSP损失
         else:
             running_contrastive_loss += contrastive_loss.item() if isinstance(contrastive_loss, torch.Tensor) else 0.0
             running_loss_distill += loss_distill.item() if isinstance(loss_distill, torch.Tensor) else running_loss_distill + 0.0
@@ -467,9 +504,11 @@ def train_epoch(model, dataloader, optimizer, device, epoch, use_amp=True, scale
     epoch_loss_kdsp = running_loss_kdsp / len(dataloader)
     epoch_acc = 100 * correct / total if total > 0 else 0.0
     
-    # 返回损失，对于 biomedcoop_pmcclip 返回 sccm 和 kdsp，其他返回 contrastive 和 distill
+    # 返回损失
     if is_biomedcoop_pmcclip:
         return epoch_loss, epoch_acc, epoch_loss_ce, epoch_loss_sccm, epoch_loss_kdsp
+    elif is_hybrid_coop_sccm:
+        return epoch_loss, epoch_acc, epoch_loss_ce, epoch_contrastive_loss, epoch_loss_sccm, epoch_loss_distill
     else:
         return epoch_loss, epoch_acc, epoch_loss_ce, epoch_contrastive_loss, epoch_loss_distill
 
@@ -583,6 +622,8 @@ def train_biomedcoop_cross_validation(
     classification_loss_weight=0.5,
     contrastive_loss_weight=0.5,
     distillation_loss_weight=0.0,
+    # Hybrid 模型特定参数
+    use_original_clip_resnet50=False,
 ):
     """
     使用K折交叉验证训练 BiomedCoOp 模型
@@ -809,7 +850,8 @@ def train_biomedcoop_cross_validation(
             use_amp=use_amp,
             classification_loss_weight=classification_loss_weight,
             contrastive_loss_weight=contrastive_loss_weight,
-            distillation_loss_weight=distillation_loss_weight
+            distillation_loss_weight=distillation_loss_weight,
+            use_original_clip_resnet50=use_original_clip_resnet50
         )
         
         # 根据 model_type 加载不同的模型
@@ -897,25 +939,52 @@ def train_biomedcoop_cross_validation(
         elif model_type == 'hybrid':
             if not HYBRID_AVAILABLE:
                 raise ImportError("Hybrid PMC-CLIP + BiomedCLIP components not available")
-            print(f"加载混合模型：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器...")
+            
+            # 确保 create_model_from_pretrained 可用
+            try:
+                from open_clip.src.open_clip import create_model_from_pretrained
+            except ImportError:
+                raise ImportError("无法导入 open_clip。请安装: pip install open-clip-torch")
+            
+            use_original_clip = cfg.TRAINER.BIOMEDCOOP.USE_ORIGINAL_CLIP_RESNET50
+            if use_original_clip:
+                print(f"加载混合模型：原始 CLIP ResNet50 + BiomedCLIP 文本编码器...")
+            else:
+                print(f"加载混合模型：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器...")
 
-            # 检查 PMC-CLIP 文件
-            import os
-            directory = "clip/checkpoints"
-            required_files = [
-                "text_encoder.pth",  # PMC-CLIP 的（不会使用）
-                "image_encoder(resnet50).pth",  # PMC-CLIP 的图像编码器
-                "text_projection_layer.pth"  # PMC-CLIP 的（不会使用）
-            ]
-            for filename in required_files:
-                filepath = os.path.join(directory, filename)
-                if not os.path.exists(filepath):
-                    raise FileNotFoundError(f"PMC-CLIP checkpoint not found: {filepath}. Please run download_coop_models.py first.")
+            # 加载图像编码器（PMC-CLIP 或原始 CLIP 的 ResNet50）
+            if use_original_clip:
+                # 使用原始 CLIP 的 ResNet50
+                try:
+                    import clip
+                except ImportError:
+                    raise ImportError("无法导入 clip 库。请安装: pip install git+https://github.com/openai/CLIP.git")
+                
+                print("加载原始 CLIP ResNet50 图像编码器...")
+                clip_model, _ = clip.load('RN50', device='cpu')
+                image_encoder = clip_model.visual  # 获取视觉编码器（ResNet50）
+                print("✓ 原始 CLIP ResNet50 图像编码器加载完成")
+                print(f"  输出维度: 1024")
+            else:
+                # 使用 PMC-CLIP 的 ResNet50
+                import os
+                directory = "clip/checkpoints"
+                required_files = [
+                    "text_encoder.pth",  # PMC-CLIP 的（不会使用）
+                    "image_encoder(resnet50).pth",  # PMC-CLIP 的图像编码器
+                    "text_projection_layer.pth"  # PMC-CLIP 的（不会使用）
+                ]
+                for filename in required_files:
+                    filepath = os.path.join(directory, filename)
+                    if not os.path.exists(filepath):
+                        raise FileNotFoundError(f"PMC-CLIP checkpoint not found: {filepath}. Please run download_coop_models.py first.")
 
-            # 加载 PMC-CLIP 的 ResNet50 图像编码器
-            from models.coop_pmcclip import ModifiedResNet
-            pmc_image_encoder = ModifiedResNet(layers=[3,4,6,3], output_dim=768, heads=8, image_size=224, width=64)
-            pmc_image_encoder.load_state_dict(torch.load(os.path.join(directory,'image_encoder(resnet50).pth'), weights_only=True))
+                # 加载 PMC-CLIP 的 ResNet50 图像编码器
+                from models.coop_pmcclip import ModifiedResNet
+                image_encoder = ModifiedResNet(layers=[3,4,6,3], output_dim=768, heads=8, image_size=224, width=64)
+                image_encoder.load_state_dict(torch.load(os.path.join(directory,'image_encoder(resnet50).pth'), weights_only=True))
+                print("✓ PMC-CLIP ResNet50 图像编码器加载完成")
+                print(f"  输出维度: 768")
 
             # 加载 BiomedCLIP 文本编码器
             try:
@@ -929,15 +998,22 @@ def train_biomedcoop_cross_validation(
             if cfg.TRAINER.BIOMEDCOOP.PREC == "fp32" or cfg.TRAINER.BIOMEDCOOP.PREC == "amp":
                 biomedclip_model.float()
 
-            pmc_image_encoder = pmc_image_encoder.to(device).eval()
+            image_encoder = image_encoder.to(device).eval()
             biomedclip_model = biomedclip_model.to(device).eval()
 
-            model = HybridCLIPCustomCLIP(cfg, classnames, pmc_image_encoder, biomedclip_model)
+            model = HybridCLIPCustomCLIP(cfg, classnames, image_encoder, biomedclip_model, use_original_clip=use_original_clip)
             print("✓ 成功加载混合模型")
 
         elif model_type == 'hybrid_coop':
             if not HYBRID_COOP_AVAILABLE:
                 raise ImportError("Hybrid PMC-CLIP + BiomedCLIP + CoOp components not available")
+            
+            # 确保 create_model_from_pretrained 可用
+            try:
+                from open_clip.src.open_clip import create_model_from_pretrained
+            except ImportError:
+                raise ImportError("无法导入 open_clip。请安装: pip install open-clip-torch")
+            
             print(f"加载混合模型（带 CoOp）：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器 + CoOp Prompt Learning...")
 
             # 检查 PMC-CLIP 文件
@@ -1001,8 +1077,47 @@ def train_biomedcoop_cross_validation(
             model = HybridPMCCLIPOnly(cfg, classnames, pmcclip_model, teacher_model)
             print("✓ 成功加载 PMC-CLIP 完整模型")
 
+        elif model_type == 'hybrid_coop_sccm':
+            if not HYBRID_COOP_SCCM_AVAILABLE:
+                raise ImportError("Hybrid PMC-CLIP + BiomedCLIP + CoOp + SCCM components not available")
+            print(f"加载混合模型（带 CoOp + SCCM）：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器 + CoOp + SCCM...")
+            
+            # 检查 PMC-CLIP 文件
+            import os
+            directory = "clip/checkpoints"
+            required_files = [
+                "image_encoder(resnet50).pth",
+            ]
+            for filename in required_files:
+                filepath = os.path.join(directory, filename)
+                if not os.path.exists(filepath):
+                    raise FileNotFoundError(f"PMC-CLIP checkpoint not found: {filepath}. Please run download_coop_models.py first.")
+            
+            # 加载 PMC-CLIP ResNet50
+            from models.coop_pmcclip import ModifiedResNet
+            pmc_image_encoder = ModifiedResNet(layers=[3,4,6,3], output_dim=768, heads=8, image_size=224, width=64)
+            pmc_image_encoder.load_state_dict(torch.load(os.path.join(directory,'image_encoder(resnet50).pth'), weights_only=True))
+            
+            # 加载 BiomedCLIP
+            try:
+                from open_clip.src.open_clip import create_model_from_pretrained
+                biomedclip_model, _ = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
+                print("✓ 成功加载 BiomedCLIP 模型")
+            except Exception as e:
+                print(f"✗ 加载 BiomedCLIP 失败: {e}")
+                raise
+            
+            if cfg.TRAINER.BIOMEDCOOP.PREC == "fp32" or cfg.TRAINER.BIOMEDCOOP.PREC == "amp":
+                biomedclip_model.float()
+            
+            pmc_image_encoder = pmc_image_encoder.to(device).eval()
+            biomedclip_model = biomedclip_model.to(device).eval()
+            
+            model = HybridCLIPWithCoOpSCCM(cfg, classnames, pmc_image_encoder, biomedclip_model)
+            print("✓ 成功加载混合模型（带 CoOp + SCCM）")
+
         else:
-            raise ValueError(f"Unknown model_type: {model_type}. Choose from: 'biomedclip', 'clip', 'pmcclip', 'pubmedclip', 'hybrid', 'hybrid_coop', 'pmcclip_full'")
+            raise ValueError(f"Unknown model_type: {model_type}. Choose from: 'biomedclip', 'clip', 'pmcclip', 'pubmedclip', 'hybrid', 'hybrid_coop', 'pmcclip_full', 'hybrid_coop_sccm'")
         
         model = model.to(device)
         
@@ -1034,6 +1149,11 @@ def train_biomedcoop_cross_validation(
             # 文本投影层保持可训练（用于对齐图像和文本特征维度）
             # 投影层在 HybridCLIP 类中，会在后面统一处理图像编码器时一起处理
             # 对于 hybrid_coop，CoOp prompts 也是可训练的
+        elif model_type == 'hybrid_coop_sccm':
+            # 冻结 BiomedCLIP 文本编码器
+            for param in model.biomedclip_model.parameters():
+                param.requires_grad = False
+            # CoOp prompts 和图像编码器将在后面设置为可训练
         elif model_type == 'pmcclip_full':
             # 冻结 PMC-CLIP 文本编码器
             for param in model.text_encoder.parameters():
@@ -1095,6 +1215,25 @@ def train_biomedcoop_cross_validation(
                             print(f"    训练参数: prompt_learner.{name} ({param.numel():,} 参数)")
                     else:
                         param.requires_grad = False
+            # 对于 hybrid_coop_sccm，训练 CoOp prompts 和图像投影层
+            if model_type == 'hybrid_coop_sccm':
+                if fold_num == 1:
+                    print("  同时训练 CoOp prompts（可学习的上下文 tokens）...")
+                # 训练 CoOp ctx 参数
+                if hasattr(model, 'prompt_learner'):
+                    for name, param in model.prompt_learner.named_parameters():
+                        if name == 'ctx':
+                            param.requires_grad = True
+                            if fold_num == 1:
+                                print(f"    训练参数: prompt_learner.{name} ({param.numel():,} 参数)")
+                        else:
+                            param.requires_grad = False
+                # 训练图像投影层
+                if hasattr(model, 'image_projection'):
+                    if fold_num == 1:
+                        print("  同时训练图像投影层（768->512）...")
+                    for param in model.image_projection.parameters():
+                        param.requires_grad = True
         
         # 对于使用 BiomedCoOp 的模型（pmcclip），启用 prompt_learner.ctx 的训练
         # 这是 BiomedCoOp 的核心：可学习的 prompt tokens
@@ -1199,6 +1338,7 @@ def train_biomedcoop_cross_validation(
         
         # 检测是否是 biomedcoop_pmcclip 模型
         is_biomedcoop_pmcclip = False
+        is_hybrid_coop_sccm = False
         if hasattr(actual_model, '__class__'):
             model_class_name = actual_model.__class__.__name__
             model_module = actual_model.__class__.__module__
@@ -1212,6 +1352,11 @@ def train_biomedcoop_cross_validation(
                   hasattr(actual_model.cfg, 'TRAINER') and
                   hasattr(actual_model.cfg.TRAINER, 'BIOMEDCOOP')):
                 is_biomedcoop_pmcclip = True
+            # 检查是否是 hybrid_coop_sccm
+            elif 'hybrid_pmcclip_biomedclip_coop_sccm' in model_module and model_class_name == 'HybridCLIPWithCoOpSCCM':
+                is_hybrid_coop_sccm = True
+            elif hasattr(actual_model, 'sccm_lambda') and hasattr(actual_model, 'prompt_learner'):
+                is_hybrid_coop_sccm = True
         
         # 调试信息（仅第一次）
         if fold_num == 1:
@@ -1219,10 +1364,13 @@ def train_biomedcoop_cross_validation(
             print(f"  - 模型类型: {type(actual_model).__name__}")
             print(f"  - 模型模块: {actual_model.__class__.__module__}")
             print(f"  - 是否 biomedcoop_pmcclip: {is_biomedcoop_pmcclip}")
+            print(f"  - 是否 hybrid_coop_sccm: {is_hybrid_coop_sccm}")
             if hasattr(actual_model, 'cfg') and hasattr(actual_model.cfg, 'TRAINER') and hasattr(actual_model.cfg.TRAINER, 'BIOMEDCOOP'):
                 print(f"  - SCCM_LAMBDA: {actual_model.cfg.TRAINER.BIOMEDCOOP.SCCM_LAMBDA}")
                 print(f"  - KDSP_LAMBDA: {actual_model.cfg.TRAINER.BIOMEDCOOP.KDSP_LAMBDA}")
                 print(f"  - N_PROMPTS: {actual_model.cfg.TRAINER.BIOMEDCOOP.N_PROMPTS}")
+            elif hasattr(actual_model, 'sccm_lambda'):
+                print(f"  - SCCM_LAMBDA: {actual_model.sccm_lambda}")
         
         # 训练历史
         history = {
@@ -1251,6 +1399,10 @@ def train_biomedcoop_cross_validation(
                 train_loss, train_acc, train_loss_ce, train_loss_sccm, train_loss_kdsp = train_epoch_result
                 train_contrastive_loss = 0.0
                 train_loss_distill = 0.0
+            elif is_hybrid_coop_sccm:
+                # hybrid_coop_sccm 返回 (loss, acc, loss_ce, contrastive_loss, loss_sccm, loss_distill)
+                train_loss, train_acc, train_loss_ce, train_contrastive_loss, train_loss_sccm, train_loss_distill = train_epoch_result
+                train_loss_kdsp = 0.0
             else:
                 # 其他模型返回 (loss, acc, loss_ce, contrastive_loss, loss_distill)
                 train_loss, train_acc, train_loss_ce, train_contrastive_loss, train_loss_distill = train_epoch_result
@@ -1324,6 +1476,8 @@ def train_biomedcoop_cross_validation(
             print(f"Fold {fold_num}, Epoch {epoch+1}/{epochs}")
             if is_biomedcoop_pmcclip:
                 print(f"  Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, SCCM: {train_loss_sccm:.4f}, KDSP: {train_loss_kdsp:.4f}), Train Acc: {train_acc:.2f}%")
+            elif is_hybrid_coop_sccm:
+                print(f"  Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, Contrastive: {train_contrastive_loss:.4f}, SCCM: {train_loss_sccm:.4f}, Distill: {train_loss_distill:.4f}), Train Acc: {train_acc:.2f}%")
             elif hasattr(model, 'distillation_loss_weight') and model.distillation_loss_weight > 0:
                 print(f"  Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, Contrastive: {train_contrastive_loss:.4f}, Distill: {train_loss_distill:.4f}), Train Acc: {train_acc:.2f}%")
             else:
@@ -1343,6 +1497,8 @@ def train_biomedcoop_cross_validation(
                 f.write(f"{'='*80}\n")
                 if is_biomedcoop_pmcclip:
                     f.write(f"Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, SCCM: {train_loss_sccm:.4f}, KDSP: {train_loss_kdsp:.4f}), Train Acc: {train_acc:.2f}%\n")
+                elif is_hybrid_coop_sccm:
+                    f.write(f"Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, Contrastive: {train_contrastive_loss:.4f}, SCCM: {train_loss_sccm:.4f}, Distill: {train_loss_distill:.4f}), Train Acc: {train_acc:.2f}%\n")
                 elif hasattr(model, 'distillation_loss_weight') and model.distillation_loss_weight > 0:
                     f.write(f"Train Loss: {train_loss:.4f} (CE: {train_loss_ce:.4f}, Contrastive: {train_contrastive_loss:.4f}, Distill: {train_loss_distill:.4f}), Train Acc: {train_acc:.2f}%\n")
                 else:
@@ -1465,8 +1621,8 @@ def main():
     
     # 模型类型参数
     parser.add_argument('--model-type', type=str, default='biomedclip',
-                       choices=['biomedclip', 'clip', 'pmcclip', 'pubmedclip', 'hybrid', 'hybrid_coop', 'pmcclip_full'],
-                       help='模型类型: biomedclip, clip, pmcclip, pubmedclip, hybrid, hybrid_coop, pmcclip_full (默认: biomedclip)')
+                       choices=['biomedclip', 'clip', 'pmcclip', 'pubmedclip', 'hybrid', 'hybrid_coop', 'pmcclip_full', 'hybrid_coop_sccm'],
+                       help='模型类型: biomedclip, clip, pmcclip, pubmedclip, hybrid, hybrid_coop, pmcclip_full, hybrid_coop_sccm (默认: biomedclip)')
     parser.add_argument('--clip-backbone', type=str, default='ViT-B/16',
                        choices=['ViT-B/16', 'ViT-B/32', 'RN50', 'RN101'],
                        help='CLIP/PubMedCLIP 的 backbone (默认: ViT-B/16)')
@@ -1532,6 +1688,10 @@ def main():
     parser.add_argument('--distillation-loss-weight', type=float, default=0.0,
                        help='蒸馏损失权重（默认0.0，不使用蒸馏）')
     
+    # Hybrid 模型特定参数
+    parser.add_argument('--use-original-clip-resnet50', action='store_true',
+                       help='使用原始 CLIP 的 ResNet50 而不是 PMC-CLIP 的 ResNet50（仅对 hybrid 模型有效）')
+    
     args = parser.parse_args()
     
     train_biomedcoop_cross_validation(
@@ -1573,6 +1733,7 @@ def main():
         classification_loss_weight=args.classification_loss_weight,
         contrastive_loss_weight=args.contrastive_loss_weight,
         distillation_loss_weight=args.distillation_loss_weight,
+        use_original_clip_resnet50=args.use_original_clip_resnet50,
     )
 
 

@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+resnet18,resnet18_ce_only,val,207,"{""0"": 59, ""1"": 10, ""2"": 30, ""3"": 68, ""4"": 12, ""5"": 19, ""6"": 9}",0.934(0.913-0.953),0.582(0.508-0.652),0.938(0.926-0.950),0.943(0.930-0.955),0.698(0.597-0.821),0.911(0.894-0.930)

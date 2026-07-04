@@ -1,0 +1,11 @@
+{
+  "Acetabular Loosening": "acetabular cup radiolucent line, acetabular cup migration, cup bone interface lucency, acetabular component loosening, acetabular cup position change",
+  "Dislocation": "femoral head dislocated, head outside acetabular cup, prosthetic hip dislocation, femoral head displaced, hip prosthesis dislocated",
+  "Fracture": "cortical bone discontinuity, periprosthetic bone fracture, bone fracture near implant, cortical bone break, bone fracture adjacent implant",
+  "Good Place": "well positioned hip prosthesis, proper implant alignment, stable prosthesis position, correct hip implant placement, optimal prosthesis alignment",
+  "Native Hip": "no prosthetic hip components, native hip joint anatomy, natural hip bone structure, original hip joint, no artificial hip implant",
+  "Spacer": "antibiotic cement spacer, temporary hip spacer present, cement spacer in joint, hip antibiotic spacer, temporary cement prosthesis",
+  "Stem Loosening": "femoral stem subsidence, stem radiolucent lines, femoral stem migration, stem bone interface lucency, femoral component loosening",
+  "Infection": "periosteal reaction present, irregular osteolysis pattern, soft tissue swelling hip, bone infection signs, periprosthetic infection findings",
+  "Wear": "wear debris osteolysis, asymmetric joint space narrowing, prosthesis wear particles, polyethylene wear signs, wear related bone loss"
+}

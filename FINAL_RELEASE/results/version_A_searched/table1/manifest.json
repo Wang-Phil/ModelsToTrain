@@ -1,0 +1,92 @@
+{
+  "models": {
+    "casgnet": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "mobilenetv4_m": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "starnet_s1": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "densenet121": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "resnet18": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "googlenet": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "resnet50": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    },
+    "lsnet_b": {
+      "complete": true,
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "test_roc.png",
+        "test_confusion.png"
+      ]
+    }
+  },
+  "split": "test per-model subsets (subset217 / val_207 / test_full_258)",
+  "checkpoint_version": "v2",
+  "figures": [
+    "figures/overall_model_comparison.png",
+    "figures/per_class_comparison.png",
+    "figures/model_auc_comparison.png",
+    "figures/confusion_matrices_grid.png"
+  ]
+}

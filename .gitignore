@@ -110,3 +110,31 @@ Desktop.ini
 # runs/
 # tensorboard_logs/
 
+
+# ==========================================
+# FINAL_RELEASE paper package (tracked; exceptions above)
+# ==========================================
+!FINAL_RELEASE/
+!FINAL_RELEASE/**
+!FINAL_RELEASE/checkpoints/
+!FINAL_RELEASE/checkpoints/**
+!FINAL_RELEASE/**/*.pth
+!FINAL_RELEASE/data/
+!FINAL_RELEASE/data/**
+!FINAL_RELEASE/results/
+!FINAL_RELEASE/results/**
+
+# ==========================================
+# Large / duplicate dirs (exclude from git)
+# ==========================================
+output/
+evaluation_clip_cm_roc_gradcam/
+2026_05/
+new_data_trainval/
+evaluation_results/
+FINAL_RELEASE.tar.gz
+*.pth.tar*
+*.pth.tar-*
+
+# PUBLICATION_PACKAGE lives under evaluation_results; use FINAL_RELEASE only
+PUBLICATION_PACKAGE/

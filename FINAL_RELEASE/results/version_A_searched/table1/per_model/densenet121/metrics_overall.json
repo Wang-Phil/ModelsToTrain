@@ -1,0 +1,20 @@
+{
+  "model": "densenet121",
+  "checkpoint": "densenet121_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.909(0.891-0.925)",
+  "repro_auc": "0.936(0.901-0.963)",
+  "sensitivity": "0.721(0.624-0.816)",
+  "specificity": "0.941(0.929-0.953)",
+  "npv": "0.938(0.926-0.949)",
+  "ppv": "0.597(0.523-0.674)",
+  "excel_acc": "0.942(0.926-0.957)",
+  "excel_auc": "0.939(0.887-0.976)",
+  "acc_delta": -0.03299999999999992,
+  "auc_delta": -0.0029999999999998916,
+  "match_status": "blocked"
+}

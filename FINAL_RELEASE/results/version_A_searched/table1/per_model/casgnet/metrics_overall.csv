@@ -1,0 +1,2 @@
+model,checkpoint,split,group,mode,data_root,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+casgnet,casgnet_s1_ce_only,test,subset217,subset_search,old_data/test,230,0.932(0.916-0.948),0.965(0.946-0.980),0.689(0.571-0.800),0.945(0.932-0.956),0.961(0.951-0.970),0.825(0.750-0.915),0.949(0.933-0.964),0.962(0.941-0.978),-0.016999999999999904,0.0030000000000000027,blocked

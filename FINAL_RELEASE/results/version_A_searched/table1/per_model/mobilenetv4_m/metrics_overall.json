@@ -1,0 +1,20 @@
+{
+  "model": "mobilenetv4_m",
+  "checkpoint": "mobilenetv4_m_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.950(0.937-0.963)",
+  "repro_auc": "0.933(0.893-0.977)",
+  "sensitivity": "0.720(0.642-0.819)",
+  "specificity": "0.962(0.952-0.973)",
+  "npv": "0.964(0.954-0.974)",
+  "ppv": "0.916(0.881-0.940)",
+  "excel_acc": "0.926(0.910-0.941)",
+  "excel_auc": "0.950(0.930-0.966)",
+  "acc_delta": 0.02399999999999991,
+  "auc_delta": -0.016999999999999904,
+  "match_status": "blocked"
+}

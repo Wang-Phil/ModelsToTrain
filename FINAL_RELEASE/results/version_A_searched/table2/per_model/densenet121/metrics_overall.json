@@ -1,0 +1,17 @@
+{
+  "model": "densenet121",
+  "checkpoint": "densenet121_ce_only",
+  "split": "val",
+  "n": 240,
+  "repro_acc": "0.878(0.861-0.896)",
+  "repro_auc": "0.910(0.881-0.934)",
+  "sensitivity": "0.605(0.528-0.681)",
+  "specificity": "0.919(0.906-0.932)",
+  "npv": "0.920(0.906-0.931)",
+  "ppv": "0.636(0.573-0.701)",
+  "excel_acc": "0.930(0.913-0.946)",
+  "excel_auc": "0.933(0.906-0.959)",
+  "acc_delta": -0.052000000000000046,
+  "auc_delta": -0.02300000000000002,
+  "match_status": "blocked"
+}

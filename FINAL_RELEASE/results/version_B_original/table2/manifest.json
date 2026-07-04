@@ -1,0 +1,164 @@
+{
+  "table": "table2",
+  "split": "val",
+  "split_dir": "old_data/val",
+  "n_total": 207,
+  "per_class_counts": {
+    "Acetabular Loosening": 59,
+    "Dislocation": 10,
+    "Fracture": 30,
+    "Good Place": 68,
+    "Spacer": 12,
+    "Stem Loosening": 19,
+    "Wear": 9
+  },
+  "ckpt_root": "v3",
+  "ckpt_root_path": "checkpoints/old_data_supcon_compare_v3",
+  "preprocessing": "legacy_val_resize (Resize 224x224)",
+  "bootstrap": {
+    "n": 1000,
+    "seed": 42,
+    "confidence": 0.95
+  },
+  "subset_search": false,
+  "models": {
+    "casgnet": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/casgnet_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "mobilenetv4_m": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/mobilenetv4_m_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "starnet_s1": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/starnet_s1_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "densenet121": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/densenet121_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "resnet18": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/resnet18_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "googlenet": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/googlenet_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "resnet50": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/resnet50_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    },
+    "lsnet_b": {
+      "complete": true,
+      "n_samples": 207,
+      "cache": "caches/lsnet_b_val_predictions.npz",
+      "artifacts": [
+        "metrics_overall.json",
+        "metrics_overall.csv",
+        "metrics_per_class.csv",
+        "val_roc.png",
+        "val_confusion.png",
+        "val_roc_auc.csv"
+      ]
+    }
+  },
+  "auc_ranking": [
+    [
+      "casgnet",
+      0.944
+    ],
+    [
+      "mobilenetv4_m",
+      0.936
+    ],
+    [
+      "starnet_s1",
+      0.935
+    ],
+    [
+      "resnet18",
+      0.934
+    ],
+    [
+      "densenet121",
+      0.933
+    ],
+    [
+      "googlenet",
+      0.929
+    ],
+    [
+      "resnet50",
+      0.922
+    ],
+    [
+      "lsnet_b",
+      0.922
+    ]
+  ]
+}

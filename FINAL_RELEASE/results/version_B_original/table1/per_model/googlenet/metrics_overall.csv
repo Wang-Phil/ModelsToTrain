@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+googlenet,googlenet_ce_only,test,258,"{""0"": 58, ""1"": 12, ""2"": 40, ""3"": 93, ""4"": 16, ""5"": 22, ""6"": 17}",0.903(0.875-0.928),0.612(0.546-0.676),0.930(0.919-0.940),0.927(0.916-0.937),0.596(0.522-0.667),0.879(0.860-0.896)

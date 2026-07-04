@@ -1,0 +1,497 @@
+{
+  "built_at": "2026-07-04T09:18:12.683122",
+  "source_project": "/home/ln/wangweicheng/ModelsTotrain",
+  "statistics": {
+    "results_files": 602,
+    "results_size": "47M",
+    "checkpoints_files": 49,
+    "checkpoints_size": "767M",
+    "code_files": 22,
+    "code_size": "484K",
+    "data_files": 492,
+    "data_size": "91M",
+    "total_files": 1165,
+    "total_size": "905M",
+    "symlinks": 0,
+    "built_at": "2026-07-04T09:18:12.683122"
+  },
+  "files": [
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/casgnet/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/casgnet_s1_ce_only/best_auc_model.pth",
+      "size_bytes": 11982417
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/casgnet/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/casgnet_s1_ce_only/history.json",
+      "size_bytes": 11461
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/casgnet/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/casgnet_s1_ce_only/best_auc_model.pth",
+      "size_bytes": 11982417
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/casgnet/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/casgnet_s1_ce_only/history.json",
+      "size_bytes": 11347
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/starnet/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/starnet_s1_ce_only/best_auc_model.pth",
+      "size_bytes": 11521617
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/starnet/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/starnet_s1_ce_only/history.json",
+      "size_bytes": 11453
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/starnet/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/starnet_s1_ce_only/best_auc_model.pth",
+      "size_bytes": 11521617
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/starnet/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/starnet_s1_ce_only/history.json",
+      "size_bytes": 11347
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/densenet121/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/densenet121_ce_only/best_auc_model.pth",
+      "size_bytes": 30826198
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/densenet121/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/densenet121_ce_only/history.json",
+      "size_bytes": 11441
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/densenet121/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/densenet121_ce_only/best_auc_model.pth",
+      "size_bytes": 30826198
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/densenet121/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/densenet121_ce_only/history.json",
+      "size_bytes": 11331
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet18/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/resnet18_ce_only/best_auc_model.pth",
+      "size_bytes": 46116997
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet18/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/resnet18_ce_only/history.json",
+      "size_bytes": 11398
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet18/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/resnet18_ce_only/best_auc_model.pth",
+      "size_bytes": 46116997
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet18/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/resnet18_ce_only/history.json",
+      "size_bytes": 11342
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet50/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/resnet50_ce_only/best_auc_model.pth",
+      "size_bytes": 98875299
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet50/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/resnet50_ce_only/history.json",
+      "size_bytes": 11364
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet50/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/resnet50_ce_only/best_auc_model.pth",
+      "size_bytes": 98875299
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/resnet50/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/resnet50_ce_only/history.json",
+      "size_bytes": 11295
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/mobilenetv4_m/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/mobilenetv4_m_ce_only/best_auc_model.pth",
+      "size_bytes": 37107251
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/mobilenetv4_m/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/mobilenetv4_m_ce_only/history.json",
+      "size_bytes": 11304
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/mobilenetv4_m/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/mobilenetv4_m_ce_only/best_auc_model.pth",
+      "size_bytes": 37107251
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/mobilenetv4_m/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/mobilenetv4_m_ce_only/history.json",
+      "size_bytes": 11304
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/googlenet/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/googlenet_ce_only/best_auc_model.pth",
+      "size_bytes": 24978139
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/googlenet/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/googlenet_ce_only/history.json",
+      "size_bytes": 11475
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/googlenet/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/googlenet_ce_only/best_auc_model.pth",
+      "size_bytes": 24978139
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/googlenet/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/googlenet_ce_only/history.json",
+      "size_bytes": 11303
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/lsnet_b/table1_v2/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/lsnet_b_ce_only/best_auc_model.pth",
+      "size_bytes": 93355742
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/lsnet_b/table1_v2/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v2/lsnet_b_ce_only/history.json",
+      "size_bytes": 11444
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/lsnet_b/table2_v3/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/lsnet_b_ce_only/best_auc_model.pth",
+      "size_bytes": 93355742
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/main_8_models/lsnet_b/table2_v3/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/old_data_supcon_compare_v3/lsnet_b_ce_only/history.json",
+      "size_bytes": 11346
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/starnet_baseline_ab000/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab000_ce_only/best_auc_model.pth",
+      "size_bytes": 11498338
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/starnet_baseline_ab000/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab000_ce_only/history.json",
+      "size_bytes": 11441
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_skunit_ab001/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab001_ce_only/best_auc_model.pth",
+      "size_bytes": 11914623
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_skunit_ab001/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab001_ce_only/history.json",
+      "size_bytes": 11425
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_grn_ab010/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab010_ce_only/best_auc_model.pth",
+      "size_bytes": 11556088
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_grn_ab010/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab010_ce_only/history.json",
+      "size_bytes": 11412
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_sa_ab011/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab011_ce_only/best_auc_model.pth",
+      "size_bytes": 11951927
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_sa_ab011/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab011_ce_only/history.json",
+      "size_bytes": 11460
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_sa_ab100/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab100_ce_only/best_auc_model.pth",
+      "size_bytes": 11510765
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_only_sa_ab100/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab100_ce_only/history.json",
+      "size_bytes": 11420
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_grn_ab101/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab101_ce_only/best_auc_model.pth",
+      "size_bytes": 11924539
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_grn_ab101/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab101_ce_only/history.json",
+      "size_bytes": 11458
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_skunit_ab110/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab110_ce_only/best_auc_model.pth",
+      "size_bytes": 11568451
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_no_skunit_ab110/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab110_ce_only/history.json",
+      "size_bytes": 11422
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_full_ab111/best_auc_model.pth",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab111_ce_only/best_auc_model.pth",
+      "size_bytes": 11961843
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/checkpoints/ablation_8_variants/casgnet_full_ab111/history.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab111_ce_only/history.json",
+      "size_bytes": 11458
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/test_image_list.txt",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/test_image_list.txt",
+      "size_bytes": 19283
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/val_image_list.txt",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/val_image_list.txt",
+      "size_bytes": 15431
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/test_manifest.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/test_manifest.json",
+      "size_bytes": 253
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/val_manifest.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/val_manifest.json",
+      "size_bytes": 250
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/original_split_summary.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/original_split_summary.json",
+      "size_bytes": 18602
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/splits/before_after_vs_searched.csv",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/original_split_snapshot/before_after_vs_searched.csv",
+      "size_bytes": 1827
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/casgnet_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/casgnet_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/densenet121_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/densenet121_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/googlenet_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/googlenet_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/lsnet_b_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/lsnet_b_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/mobilenetv4_m_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/mobilenetv4_m_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/resnet18_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/resnet18_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/resnet50_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/resnet50_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/starnet_s1_test_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table1_final_package_original/caches/starnet_s1_test_predictions.npz",
+      "size_bytes": 12622
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/casgnet_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/casgnet_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/densenet121_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/densenet121_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/googlenet_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/googlenet_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/lsnet_b_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/lsnet_b_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/mobilenetv4_m_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/mobilenetv4_m_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/resnet18_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/resnet18_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/resnet50_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/resnet50_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/caches/starnet_s1_val_predictions.npz",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/table2_final_package_original/caches/starnet_s1_val_predictions.npz",
+      "size_bytes": 10378
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/relaxed_group_counts.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/relaxed_group_counts.json",
+      "size_bytes": 568
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/images/test",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/old_data/test",
+      "size_bytes": 51013811,
+      "note": "full image split copy"
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/data/images/val",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/old_data/val",
+      "size_bytes": 42843556,
+      "note": "full image split copy"
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/casgnet.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/casgnet.py",
+      "size_bytes": 13864
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/starnet.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/starnet.py",
+      "size_bytes": 6574
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/starnetsk.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/starnetsk.py",
+      "size_bytes": 25782
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/classic_models.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/classic_models.py",
+      "size_bytes": 26965
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/mobilenetv4.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/mobilenetv4.py",
+      "size_bytes": 9467
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/multi_head_classifiers.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/multi_head_classifiers.py",
+      "size_bytes": 4209
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/lsnet_vendor/__init__.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/lsnet_vendor/__init__.py",
+      "size_bytes": 153
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/lsnet_vendor/lsnet.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/lsnet_vendor/lsnet.py",
+      "size_bytes": 13593
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/models/lsnet_vendor/ska.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/models/lsnet_vendor/ska.py",
+      "size_bytes": 9058
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/train_multiclass.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/train_multiclass.py",
+      "size_bytes": 86186
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/requirements.txt",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/requirements.txt",
+      "size_bytes": 499
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/train/train_casgnet_contrastive_newdata.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/train_casgnet_contrastive_newdata.py",
+      "size_bytes": 40794
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/rebuild_original_split.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/rebuild_original_split.py",
+      "size_bytes": 27123
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/run_delong_tests.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/run_delong_tests.py",
+      "size_bytes": 16809
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/run_all_models_eval.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/run_all_models_eval.py",
+      "size_bytes": 20984
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/generate_plots.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/generate_plots.py",
+      "size_bytes": 504
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/rebuild_ablation_original_split.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/rebuild_ablation_original_split.py",
+      "size_bytes": 23134
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/metric_ranking_utils.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/metric_ranking_utils.py",
+      "size_bytes": 25044
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/MODEL_CHECKPOINT_MAPPING.json",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/evaluation_results/excel_aligned/MODEL_CHECKPOINT_MAPPING.json",
+      "size_bytes": 3111
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/eval_checkpoint_on_folder.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/eval_checkpoint_on_folder.py",
+      "size_bytes": 9409
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/compare_models_on_eltra_test.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/compare_models_on_eltra_test.py",
+      "size_bytes": 12234
+    },
+    {
+      "path": "/home/ln/wangweicheng/ModelsTotrain/FINAL_RELEASE/code/eval/refresh_supcon_checkpoint_metrics.py",
+      "source": "/home/ln/wangweicheng/ModelsTotrain/refresh_supcon_checkpoint_metrics.py",
+      "size_bytes": 53703
+    }
+  ]
+}

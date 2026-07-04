@@ -1,0 +1,2 @@
+model,checkpoint,split,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+resnet50,resnet50_ce_only,val,240,0.868(0.851-0.886),0.896(0.868-0.921),0.624(0.551-0.694),0.910(0.897-0.923),0.911(0.897-0.923),0.657(0.589-0.722),0.903(0.883-0.921),0.922(0.890-0.945),-0.03500000000000003,-0.026000000000000023,blocked

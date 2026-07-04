@@ -1,0 +1,24 @@
+{
+  "auc_point": 0.962,
+  "auc_ci": "0.962(0.948-0.976)",
+  "auc_mean": 0.962,
+  "auc_lo": 0.948,
+  "auc_hi": 0.976,
+  "sensitivity": "0.753(0.690-0.816)",
+  "specificity": "0.956(0.946-0.965)",
+  "npv": "0.965(0.957-0.973)",
+  "ppv": "0.856(0.802-0.906)",
+  "acc": "0.938(0.924-0.952)",
+  "point": {
+    "auc": 0.962,
+    "sensitivity": 0.753,
+    "specificity": 0.956,
+    "npv": 0.965,
+    "ppv": 0.856,
+    "acc": 0.938
+  },
+  "source": "table1_final_package_original/casgnet",
+  "n_samples": 258,
+  "class_counts": "{\"0\": 58, \"1\": 12, \"2\": 40, \"3\": 93, \"4\": 16, \"5\": 22, \"6\": 17}",
+  "n_bootstrap": 1000
+}

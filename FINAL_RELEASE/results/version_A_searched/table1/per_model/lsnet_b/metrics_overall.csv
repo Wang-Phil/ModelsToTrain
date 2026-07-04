@@ -1,0 +1,2 @@
+model,checkpoint,split,group,mode,data_root,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+lsnet_b,lsnet_b_ce_only,test,subset217,subset_search,old_data/test,230,0.921(0.903-0.937),0.943(0.908-0.971),0.696(0.576-0.797),0.946(0.933-0.958),0.944(0.931-0.955),0.692(0.619-0.763),0.920(0.905-0.936),0.929(0.906-0.950),0.0010000000000000009,0.013999999999999901,close

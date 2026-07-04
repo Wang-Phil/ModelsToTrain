@@ -1,0 +1,2 @@
+model,checkpoint,split,group,mode,data_root,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+starnet_s1,starnet_s1_ce_only,test,subset217,subset_search,old_data/test,230,0.970(0.958-0.980),0.946(0.879-0.991),0.824(0.718-0.925),0.980(0.972-0.987),0.979(0.971-0.986),0.898(0.837-0.949),0.946(0.930-0.960),0.943(0.888-0.982),0.02400000000000002,0.0030000000000000027,blocked

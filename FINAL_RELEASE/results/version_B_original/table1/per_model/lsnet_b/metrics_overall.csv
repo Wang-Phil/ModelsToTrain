@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+lsnet_b,lsnet_b_ce_only,test,258,"{""0"": 58, ""1"": 12, ""2"": 40, ""3"": 93, ""4"": 16, ""5"": 22, ""6"": 17}",0.953(0.931-0.970),0.760(0.694-0.820),0.956(0.946-0.966),0.956(0.946-0.966),0.793(0.741-0.844),0.933(0.918-0.947)

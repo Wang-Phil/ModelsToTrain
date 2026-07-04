@@ -1,0 +1,2 @@
+model,checkpoint,split,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+densenet121,densenet121_ce_only,val,240,0.878(0.861-0.896),0.910(0.881-0.934),0.605(0.528-0.681),0.919(0.906-0.932),0.920(0.906-0.931),0.636(0.573-0.701),0.930(0.913-0.946),0.933(0.906-0.959),-0.052000000000000046,-0.02300000000000002,blocked

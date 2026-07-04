@@ -1,0 +1,20 @@
+{
+  "model": "lsnet_b",
+  "checkpoint": "lsnet_b_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.921(0.903-0.937)",
+  "repro_auc": "0.943(0.908-0.971)",
+  "sensitivity": "0.696(0.576-0.797)",
+  "specificity": "0.946(0.933-0.958)",
+  "npv": "0.944(0.931-0.955)",
+  "ppv": "0.692(0.619-0.763)",
+  "excel_acc": "0.920(0.905-0.936)",
+  "excel_auc": "0.929(0.906-0.950)",
+  "acc_delta": 0.0010000000000000009,
+  "auc_delta": 0.013999999999999901,
+  "match_status": "close"
+}

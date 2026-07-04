@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+densenet121,densenet121_ce_only,val,207,"{""0"": 59, ""1"": 10, ""2"": 30, ""3"": 68, ""4"": 12, ""5"": 19, ""6"": 9}",0.933(0.903-0.957),0.730(0.646-0.811),0.954(0.942-0.965),0.954(0.943-0.966),0.775(0.697-0.844),0.930(0.913-0.946)

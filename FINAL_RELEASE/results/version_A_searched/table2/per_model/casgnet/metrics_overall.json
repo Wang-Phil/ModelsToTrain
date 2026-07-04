@@ -1,0 +1,17 @@
+{
+  "model": "casgnet",
+  "checkpoint": "casgnet_s1_ce_only",
+  "split": "val",
+  "n": 240,
+  "repro_acc": "0.916(0.900-0.932)",
+  "repro_auc": "0.952(0.936-0.967)",
+  "sensitivity": "0.719(0.637-0.792)",
+  "specificity": "0.942(0.930-0.953)",
+  "npv": "0.947(0.935-0.957)",
+  "ppv": "0.807(0.740-0.863)",
+  "excel_acc": "0.924(0.906-0.941)",
+  "excel_auc": "0.945(0.925-0.962)",
+  "acc_delta": -0.008000000000000007,
+  "auc_delta": 0.007000000000000006,
+  "match_status": "close"
+}

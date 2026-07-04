@@ -1,0 +1,37 @@
+path,true,casgnet_pred,starnet_pred,casgnet_correct,starnet_correct
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_110_2.png,Acetabular Loosening,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_11_2.png,Acetabular Loosening,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_136_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_142_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_148_2.png,Acetabular Loosening,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_169_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_228_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_238_2.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_249_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_268_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_272_2.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_289_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_305_1.png,Acetabular Loosening,Dislocation,Dislocation,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_364_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_365_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_379_2.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_390_2.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_391_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Acetabular Loosening/202604_5_1.png,Acetabular Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Fracture/202604_231_1.png,Fracture,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Fracture/202604_314_2.png,Fracture,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Fracture/202604_348_1.png,Fracture,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_148_1.png,Good Place,Fracture,Fracture,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_229_2.png,Good Place,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_267_1.png,Good Place,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_328_2.png,Good Place,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_399_1.png,Good Place,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_50_1.png,Good Place,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Good Place/202604_64_2.png,Good Place,Stem Loosening,Stem Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Stem Loosening/202604_133_1.png,Stem Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Stem Loosening/202604_81_2.png,Stem Loosening,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_355_2.png,Wear,Fracture,Fracture,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_5_2.png,Wear,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_75_2.png,Wear,Good Place,Good Place,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_82_1.png,Wear,Acetabular Loosening,Acetabular Loosening,False,False
+/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_91_2.png,Wear,Acetabular Loosening,Acetabular Loosening,False,False

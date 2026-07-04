@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+casgnet,casgnet_s1_ce_only,test,258,"{""0"": 58, ""1"": 12, ""2"": 40, ""3"": 93, ""4"": 16, ""5"": 22, ""6"": 17}",0.962(0.948-0.976),0.753(0.690-0.816),0.956(0.946-0.965),0.965(0.957-0.973),0.856(0.802-0.906),0.938(0.924-0.952)

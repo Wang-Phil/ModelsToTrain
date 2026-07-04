@@ -1,0 +1,2 @@
+model,checkpoint,split,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+casgnet,casgnet_s1_ce_only,val,240,0.916(0.900-0.932),0.952(0.936-0.967),0.719(0.637-0.792),0.942(0.930-0.953),0.947(0.935-0.957),0.807(0.740-0.863),0.924(0.906-0.941),0.945(0.925-0.962),-0.008000000000000007,0.007000000000000006,close

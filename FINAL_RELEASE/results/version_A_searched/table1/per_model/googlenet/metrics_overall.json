@@ -1,0 +1,20 @@
+{
+  "model": "googlenet",
+  "checkpoint": "googlenet_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.970(0.958-0.981)",
+  "repro_auc": "0.934(0.879-0.980)",
+  "sensitivity": "0.843(0.736-0.934)",
+  "specificity": "0.983(0.976-0.989)",
+  "npv": "0.979(0.971-0.986)",
+  "ppv": "0.781(0.680-0.873)",
+  "excel_acc": "0.917(0.900-0.934)",
+  "excel_auc": "0.936(0.914-0.955)",
+  "acc_delta": 0.052999999999999936,
+  "auc_delta": -0.0020000000000000018,
+  "match_status": "blocked"
+}

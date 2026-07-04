@@ -1,0 +1,20 @@
+{
+  "model": "resnet50",
+  "checkpoint": "resnet50_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.982(0.971-0.990)",
+  "repro_auc": "0.936(0.851-0.989)",
+  "sensitivity": "0.828(0.714-0.929)",
+  "specificity": "0.987(0.980-0.993)",
+  "npv": "0.989(0.984-0.995)",
+  "ppv": "0.899(0.815-0.976)",
+  "excel_acc": "0.909(0.890-0.925)",
+  "excel_auc": "0.930(0.905-0.951)",
+  "acc_delta": 0.07299999999999995,
+  "auc_delta": 0.006000000000000005,
+  "match_status": "blocked"
+}

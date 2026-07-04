@@ -1,0 +1,6 @@
+data/** filter=lfs diff=lfs merge=lfs -text
+old_data/** filter=lfs diff=lfs merge=lfs -text
+new_data/** filter=lfs diff=lfs merge=lfs -text
+eltra_test/** filter=lfs diff=lfs merge=lfs -text
+FINAL_RELEASE/checkpoints/**/*.pth filter=lfs diff=lfs merge=lfs -text
+FINAL_RELEASE/data/** filter=lfs diff=lfs merge=lfs -text

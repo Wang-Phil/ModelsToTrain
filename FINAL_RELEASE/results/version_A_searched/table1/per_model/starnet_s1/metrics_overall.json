@@ -1,0 +1,20 @@
+{
+  "model": "starnet_s1",
+  "checkpoint": "starnet_s1_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.970(0.958-0.980)",
+  "repro_auc": "0.946(0.879-0.991)",
+  "sensitivity": "0.824(0.718-0.925)",
+  "specificity": "0.980(0.972-0.987)",
+  "npv": "0.979(0.971-0.986)",
+  "ppv": "0.898(0.837-0.949)",
+  "excel_acc": "0.946(0.930-0.960)",
+  "excel_auc": "0.943(0.888-0.982)",
+  "acc_delta": 0.02400000000000002,
+  "auc_delta": 0.0030000000000000027,
+  "match_status": "blocked"
+}

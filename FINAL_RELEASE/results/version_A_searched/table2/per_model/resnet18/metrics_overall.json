@@ -1,0 +1,17 @@
+{
+  "model": "resnet18",
+  "checkpoint": "resnet18_ce_only",
+  "split": "val",
+  "n": 240,
+  "repro_acc": "0.877(0.858-0.895)",
+  "repro_auc": "0.893(0.864-0.918)",
+  "sensitivity": "0.651(0.579-0.726)",
+  "specificity": "0.915(0.902-0.929)",
+  "npv": "0.916(0.902-0.930)",
+  "ppv": "0.699(0.625-0.763)",
+  "excel_acc": "0.912(0.895-0.928)",
+  "excel_auc": "0.934(0.913-0.953)",
+  "acc_delta": -0.03500000000000003,
+  "auc_delta": -0.041000000000000036,
+  "match_status": "blocked"
+}

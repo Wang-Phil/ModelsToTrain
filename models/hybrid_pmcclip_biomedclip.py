@@ -30,7 +30,7 @@ except ImportError:
     build_lr_scheduler = None
     compute_accuracy = None
 
-# 导入 PMC-CLIP 的 ModifiedResNet
+# 导入 PMC-CLIP 的 ModifiedResNet（可选）
 import sys
 local_clip_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'clip')
 if local_clip_path not in sys.path:
@@ -38,9 +38,11 @@ if local_clip_path not in sys.path:
 
 try:
     from clip.pmcclip import ModifiedResNet
+    PMCCLIP_AVAILABLE = True
 except ImportError:
     try:
         from pmcclip import ModifiedResNet
+        PMCCLIP_AVAILABLE = True
     except ImportError:
         import importlib.util
         pmcclip_path = os.path.join(local_clip_path, 'pmcclip.py')
@@ -49,8 +51,18 @@ except ImportError:
             pmcclip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(pmcclip_module)
             ModifiedResNet = pmcclip_module.ModifiedResNet
+            PMCCLIP_AVAILABLE = True
         else:
-            raise ImportError("Cannot find ModifiedResNet. Please ensure clip/pmcclip.py exists.")
+            PMCCLIP_AVAILABLE = False
+            ModifiedResNet = None
+
+# 导入原始 CLIP（可选，用于加载 ResNet50）
+try:
+    import clip
+    CLIP_AVAILABLE = True
+except ImportError:
+    CLIP_AVAILABLE = False
+    clip = None
 
 # 导入 BiomedCLIP 相关组件
 from open_clip.src.open_clip import create_model_from_pretrained, get_tokenizer
@@ -89,24 +101,29 @@ def download_file(url, filepath):
 
 class HybridCLIP(nn.Module):
     """
-    混合模型：PMC-CLIP 的 ResNet50 图像编码器 + BiomedCLIP 的文本编码器
+    混合模型：图像编码器（PMC-CLIP 或原始 CLIP 的 ResNet50）+ BiomedCLIP 的文本编码器
     
     维度对齐策略：
-    - 图像编码器输出：768维 -> 通过 image_projection 投影到 512维
+    - PMC-CLIP ResNet50: 768维 -> 通过 image_projection 投影到 512维
+    - 原始 CLIP ResNet50: 1024维 -> 通过 image_projection 投影到 512维
     - 文本编码器输出：512维（无需投影）
     - Teacher 图像编码器输出：512维
     
     这样图像、文本、teacher都在512维，统一对齐，只需训练一个投影层。
     训练图像编码器和投影层，使用对比损失 + 分类损失 + 蒸馏损失
     """
-    def __init__(self, cfg, classnames, pmcclip_image_encoder, biomedclip_model):
+    def __init__(self, cfg, classnames, image_encoder, biomedclip_model, use_original_clip=False):
         super().__init__()
         self.n_cls = len(classnames)
+        self.use_original_clip = use_original_clip
 
-        # ========== 图像编码器：使用 PMC-CLIP 的 ResNet50 ==========
-        self.image_encoder = pmcclip_image_encoder
+        # ========== 图像编码器：使用 PMC-CLIP 或原始 CLIP 的 ResNet50 ==========
+        self.image_encoder = image_encoder
         self.dtype = torch.float32
-        self.image_embed_dim = 768  # PMC-CLIP ResNet50 输出维度
+        if use_original_clip:
+            self.image_embed_dim = 1024  # 原始 CLIP ResNet50 输出维度
+        else:
+            self.image_embed_dim = 768  # PMC-CLIP ResNet50 输出维度
 
         # ========== 文本编码器：使用 BiomedCLIP ==========
         self.biomedclip_model = biomedclip_model  # BiomedCLIP 完整模型，用于文本编码
@@ -122,11 +139,12 @@ class HybridCLIP(nn.Module):
         self.teacher_image_encoder.eval()  # 设置为评估模式
         self.teacher_image_embed_dim = 512  # BiomedCLIP 图像特征维度
         
-        # ========== 图像投影层：将图像特征从 768 维投影到 512 维 ==========
+        # ========== 图像投影层：将图像特征投影到 512 维 ==========
         # 统一维度策略：将图像特征投影到文本/teacher维度（512维）
         # 这样图像、文本、teacher都在512维，无需多个投影层
-        # Image (768->512) vs Text (512) [维度匹配，无需 Text 升维]
-        # Image (768->512) vs Teacher (512) [维度匹配，直接蒸馏]
+        # PMC-CLIP: Image (768->512) vs Text (512) [维度匹配]
+        # 原始 CLIP: Image (1024->512) vs Text (512) [维度匹配]
+        # Image (投影后) vs Teacher (512) [维度匹配，直接蒸馏]
         self.image_projection = nn.Linear(self.image_embed_dim, self.text_embed_dim)
         # 使用 Xavier 初始化
         nn.init.xavier_uniform_(self.image_projection.weight)
@@ -242,11 +260,17 @@ class HybridCLIP(nn.Module):
 
         logit_scale = self.logit_scale.exp()
 
-        # 获取图像特征（使用 PMC-CLIP 的 ResNet50）
+        # 获取图像特征（使用 PMC-CLIP 或原始 CLIP 的 ResNet50）
         image_features_raw = self.image_encoder(image.type(self.dtype))
+        # 处理不同的输出格式
         if isinstance(image_features_raw, dict):
             image_features_raw = image_features_raw['image_features']
-        image_features_raw = image_features_raw / image_features_raw.norm(dim=-1, keepdim=True)  # [batch_size, 768]
+        elif isinstance(image_features_raw, tuple):
+            # 原始 CLIP 的 ResNet50 可能返回元组，取第一个元素
+            image_features_raw = image_features_raw[0] if len(image_features_raw) > 0 else image_features_raw
+        
+        # 归一化图像特征（原始 CLIP 的 ResNet50 输出可能已经归一化，但为了统一处理，再次归一化）
+        image_features_raw = image_features_raw / image_features_raw.norm(dim=-1, keepdim=True)
         
         # 将图像特征投影到512维（与文本和teacher维度匹配）
         image_features = self.image_projection(image_features_raw)  # [batch_size, 512]
@@ -336,24 +360,44 @@ if DASSL_AVAILABLE:
             classnames = self.dm.dataset.classnames
 
             print("=" * 80)
-            print("构建混合模型：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器")
+            # 检查是否使用原始 CLIP 的 ResNet50
+            use_original_clip = getattr(cfg.TRAINER.BIOMEDCOOP, 'USE_ORIGINAL_CLIP_RESNET50', False)
+            if use_original_clip:
+                print("构建混合模型：原始 CLIP ResNet50 + BiomedCLIP 文本编码器")
+            else:
+                print("构建混合模型：PMC-CLIP ResNet50 + BiomedCLIP 文本编码器")
             print("=" * 80)
 
-            # 1. 检查并下载 PMC-CLIP 模型文件
-            print("检查 PMC-CLIP 模型文件...")
-            for filename, url in files.items():
-                filepath = os.path.join(directory, filename)
-                if not os.path.exists(filepath):
-                    print(f"{filename} 未找到，正在下载...")
-                    download_file(url, filepath)
-                else:
-                    print(f"✓ {filename} 已存在")
+            # 1. 加载图像编码器（PMC-CLIP 或原始 CLIP 的 ResNet50）
+            if use_original_clip:
+                # 使用原始 CLIP 的 ResNet50
+                if not CLIP_AVAILABLE:
+                    raise ImportError("无法导入 clip 库。请安装: pip install git+https://github.com/openai/CLIP.git")
+                
+                print("\n加载原始 CLIP ResNet50 图像编码器...")
+                clip_model, _ = clip.load('RN50', device='cpu')
+                image_encoder = clip_model.visual  # 获取视觉编码器（ResNet50）
+                print("✓ 原始 CLIP ResNet50 图像编码器加载完成")
+                print(f"  输出维度: 1024")
+            else:
+                # 使用 PMC-CLIP 的 ResNet50
+                if not PMCCLIP_AVAILABLE:
+                    raise ImportError("无法导入 PMC-CLIP 的 ModifiedResNet。请确保 clip/pmcclip.py 存在。")
+                
+                print("检查 PMC-CLIP 模型文件...")
+                for filename, url in files.items():
+                    filepath = os.path.join(directory, filename)
+                    if not os.path.exists(filepath):
+                        print(f"{filename} 未找到，正在下载...")
+                        download_file(url, filepath)
+                    else:
+                        print(f"✓ {filename} 已存在")
 
-            # 2. 加载 PMC-CLIP 的 ResNet50 图像编码器
-            print("\n加载 PMC-CLIP ResNet50 图像编码器...")
-            pmc_image_encoder = ModifiedResNet(layers=[3,4,6,3], output_dim=768, heads=8, image_size=224, width=64)
-            pmc_image_encoder.load_state_dict(torch.load(os.path.join(directory,'image_encoder(resnet50).pth'), weights_only=True))
-            print("✓ PMC-CLIP ResNet50 图像编码器加载完成")
+                print("\n加载 PMC-CLIP ResNet50 图像编码器...")
+                image_encoder = ModifiedResNet(layers=[3,4,6,3], output_dim=768, heads=8, image_size=224, width=64)
+                image_encoder.load_state_dict(torch.load(os.path.join(directory,'image_encoder(resnet50).pth'), weights_only=True))
+                print("✓ PMC-CLIP ResNet50 图像编码器加载完成")
+                print(f"  输出维度: 768")
 
             # 3. 加载 BiomedCLIP 模型
             print("\n加载 BiomedCLIP 文本编码器...")
@@ -372,13 +416,17 @@ if DASSL_AVAILABLE:
 
             # 4. 构建混合模型
             print("\n构建混合 CLIP 模型...")
-            self.model = HybridCLIP(cfg, classnames, pmc_image_encoder, biomedclip_model.eval())
+            self.model = HybridCLIP(cfg, classnames, image_encoder, biomedclip_model.eval(), use_original_clip=use_original_clip)
 
             # 5. 设置训练参数：训练图像编码器和投影层
             print("\n设置训练参数：")
             print("✓ 冻结文本编码器（BiomedCLIP）")
-            print("✓ 训练图像编码器（PMC-CLIP ResNet50）")
-            print("✓ 训练投影层（image_projection: 768->512）")
+            if use_original_clip:
+                print("✓ 训练图像编码器（原始 CLIP ResNet50）")
+                print("✓ 训练投影层（image_projection: 1024->512）")
+            else:
+                print("✓ 训练图像编码器（PMC-CLIP ResNet50）")
+                print("✓ 训练投影层（image_projection: 768->512）")
 
             # 设置参数的可训练性
             for name, param in self.model.named_parameters():
@@ -413,7 +461,11 @@ if DASSL_AVAILABLE:
             print(f"  总参数: {total_params:,} 参数 ({len(enabled)} 个参数组)")
             print(f"  图像编码器: {image_encoder_params:,} 参数")
             print(f"  投影层: {projection_params:,} 参数")
-            print(f"  文本编码器: 冻结（BiomedCLIP）")
+            if use_original_clip:
+                print(f"  图像编码器类型: 原始 CLIP ResNet50 (1024维)")
+            else:
+                print(f"  图像编码器类型: PMC-CLIP ResNet50 (768维)")
+            print(f"  文本编码器: 冻结（BiomedCLIP，512维）")
 
             # 加载预训练权重（如果指定）
             if cfg.MODEL.INIT_WEIGHTS:

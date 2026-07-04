@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+starnet_s1,starnet_s1_ce_only,val,207,"{""0"": 59, ""1"": 10, ""2"": 30, ""3"": 68, ""4"": 12, ""5"": 19, ""6"": 9}",0.935(0.911-0.956),0.631(0.552-0.709),0.938(0.927-0.950),0.945(0.933-0.956),0.747(0.652-0.831),0.911(0.894-0.928)

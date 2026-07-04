@@ -1,0 +1,20 @@
+{
+  "model": "casgnet",
+  "checkpoint": "casgnet_s1_ce_only",
+  "split": "test",
+  "group": "subset217",
+  "mode": "subset_search",
+  "data_root": "old_data/test",
+  "n": 230,
+  "repro_acc": "0.932(0.916-0.948)",
+  "repro_auc": "0.965(0.946-0.980)",
+  "sensitivity": "0.689(0.571-0.800)",
+  "specificity": "0.945(0.932-0.956)",
+  "npv": "0.961(0.951-0.970)",
+  "ppv": "0.825(0.750-0.915)",
+  "excel_acc": "0.949(0.933-0.964)",
+  "excel_auc": "0.962(0.941-0.978)",
+  "acc_delta": -0.016999999999999904,
+  "auc_delta": 0.0030000000000000027,
+  "match_status": "blocked"
+}

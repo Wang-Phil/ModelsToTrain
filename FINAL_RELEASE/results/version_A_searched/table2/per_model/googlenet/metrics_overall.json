@@ -1,0 +1,17 @@
+{
+  "model": "googlenet",
+  "checkpoint": "googlenet_ce_only",
+  "split": "val",
+  "n": 240,
+  "repro_acc": "0.853(0.837-0.871)",
+  "repro_auc": "0.899(0.878-0.920)",
+  "sensitivity": "0.487(0.409-0.567)",
+  "specificity": "0.900(0.888-0.912)",
+  "npv": "0.901(0.888-0.914)",
+  "ppv": "0.582(0.518-0.652)",
+  "excel_acc": "0.909(0.890-0.925)",
+  "excel_auc": "0.930(0.905-0.951)",
+  "acc_delta": -0.05600000000000005,
+  "auc_delta": -0.031000000000000028,
+  "match_status": "blocked"
+}

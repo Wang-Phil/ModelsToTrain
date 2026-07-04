@@ -1,0 +1,2 @@
+model,checkpoint,split,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+starnet_s1,starnet_s1_ce_only,val,240,0.902(0.886-0.920),0.942(0.920-0.960),0.671(0.593-0.745),0.932(0.921-0.944),0.939(0.928-0.951),0.770(0.704-0.832),0.910(0.891-0.928),0.935(0.912-0.956),-0.008000000000000007,0.006999999999999895,close

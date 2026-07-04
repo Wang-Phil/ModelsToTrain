@@ -1,0 +1,8 @@
+CLASS,AUC
+Spacer,0.998(0.994-1.000)
+Dislocation,0.950(0.851-1.000)
+Stem Loosening,0.919(0.853-0.970)
+Acetabular Loosening,0.881(0.829-0.927)
+Good Place,0.872(0.822-0.916)
+Fracture,0.871(0.801-0.938)
+Wear,0.825(0.711-0.916)

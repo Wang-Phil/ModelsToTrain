@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+resnet50,resnet50_ce_only,val,207,"{""0"": 59, ""1"": 10, ""2"": 30, ""3"": 68, ""4"": 12, ""5"": 19, ""6"": 9}",0.922(0.892-0.948),0.637(0.553-0.727),0.935(0.924-0.948),0.938(0.927-0.951),0.717(0.637-0.800),0.904(0.885-0.921)

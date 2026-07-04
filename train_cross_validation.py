@@ -353,6 +353,8 @@ def train_fold(
     best_epoch = 0
     patience_counter = 0
     min_delta = args.early_stopping_min_delta
+    sel = getattr(args, 'selection_metric', 'mAP')
+    use_acc_primary = sel == 'acc'
     # 默认patience设为20，如果用户指定了且>0则使用用户的值
     patience = args.early_stopping_patience if args.early_stopping_patience > 0 else 20
     
@@ -360,6 +362,7 @@ def train_fold(
     print(f"学习率: {args.lr}")
     print(f"优化器: {args.optimizer}")
     print(f"损失函数: {args.loss}")
+    print(f"最佳模型/早停依据: {'验证集 top-1 准确率 (acc)' if use_acc_primary else 'mAP'}")
     use_amp = getattr(args, 'use_amp', True)
     if use_amp and device.type == 'cuda':
         print(f"AMP混合精度: 启用 (可减少30-40%显存)")
@@ -423,9 +426,16 @@ def train_fold(
         history['val_acc'].append(val_acc)
         history['val_mAP'].append(val_mAP)
         
-        # 保存最佳模型（基于mAP，适用于多分类任务）
+        # 保存最佳模型：依据 selection_metric（mAP 或 acc / top-1）
         improved = False
-        if val_mAP > best_val_mAP + min_delta:
+        if use_acc_primary:
+            if val_acc > best_val_acc + min_delta:
+                improved = True
+        else:
+            if val_mAP > best_val_mAP + min_delta:
+                improved = True
+
+        if improved:
             best_val_mAP = val_mAP
             best_val_acc = val_acc
             best_epoch = epoch
@@ -448,23 +458,31 @@ def train_fold(
                 'val_loss': val_loss,
                 'class_to_idx': class_to_idx,
                 'model_name': args.model,
-                'fold': fold_num
+                'fold': fold_num,
+                'selection_metric': sel,
             }, fold_output_dir / 'best_model.pth')
         else:
             patience_counter += 1
         
-        # Early Stopping（基于mAP，适用于多分类任务）
+        # Early Stopping（与最佳模型同一指标）
         if patience is not None and patience_counter >= patience:
             print(f"\nEarly Stopping触发! (Fold {fold_num})")
-            print(f"最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
-            print(f"最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch})")
+            if use_acc_primary:
+                print(f"最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch}) [主要指标]")
+                print(f"最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
+            else:
+                print(f"最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch}) [主要指标]")
+                print(f"最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch})")
             break
         
         if epoch % 10 == 0 or epoch == 1:
             print(f"Fold {fold_num} - Epoch {epoch}/{args.epochs}")
             print(f"  Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
             print(f"  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Val mAP: {val_mAP:.2f}%")
-            print(f"  Best Val mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
+            if use_acc_primary:
+                print(f"  Best Val Acc: {best_val_acc:.2f}% (Epoch {best_epoch}) [acc] | Best Val mAP: {best_val_mAP:.2f}%")
+            else:
+                print(f"  Best Val mAP: {best_val_mAP:.2f}% (Epoch {best_epoch}) | Best Val Acc: {best_val_acc:.2f}%")
             if scheduler:
                 print(f"  LR: {optimizer.param_groups[0]['lr']:.6f}")
     
@@ -506,8 +524,12 @@ def train_fold(
         )
     
     print(f"\nFold {fold_num} 训练完成!")
-    print(f"  最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch}) [主要指标]")
-    print(f"  最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch})")
+    if use_acc_primary:
+        print(f"  最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch}) [主要指标]")
+        print(f"  最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch})")
+    else:
+        print(f"  最佳验证mAP: {best_val_mAP:.2f}% (Epoch {best_epoch}) [主要指标]")
+        print(f"  最佳验证准确率: {best_val_acc:.2f}% (Epoch {best_epoch})")
     print(f"  mAP: {final_metrics['mAP']:.2f}%")
     print(f"  Precision (Macro): {final_metrics['precision_macro']:.2f}%")
     print(f"  Recall (Macro): {final_metrics['recall_macro']:.2f}%")
@@ -722,25 +744,35 @@ def train_cross_validation(args):
     params_millions = all_fold_results[0]['params_millions']
     flops_millions = all_fold_results[0]['flops_millions']
     
-    # 打印表格格式的结果（多分类任务，突出mAP）
+    sel = getattr(args, 'selection_metric', 'mAP')
+    use_acc_primary = sel == 'acc'
+    primary_label = 'acc(top-1)' if use_acc_primary else 'mAP'
+
+    # 打印表格（主要指标行在前，与 selection_metric 一致）
     print(f"\n{'='*100}")
     print(f"{'指标':<20} {'Fold 1':<12} {'Fold 2':<12} {'Fold 3':<12} {'Fold 4':<12} {'Fold 5':<12} {'平均±标准差':<20}")
     print(f"{'='*100}")
-    
-    # 首先显示mAP（主要指标）
-    for i, result in enumerate(all_fold_results, 1):
-        if i == 1:
-            print(f"{'Best Val mAP (%)':<20} {result['best_val_mAP']:>10.2f}% ", end='')
-        else:
-            print(f"{'':<20} {result['best_val_mAP']:>10.2f}% ", end='')
-    print(f"{avg_val_mAP:>6.2f}% ± {std_val_mAP:>5.2f}%")
-    
-    for i, result in enumerate(all_fold_results, 1):
-        if i == 1:
-            print(f"{'Best Val Acc (%)':<20} {result['best_val_acc']:>10.2f}% ", end='')
-        else:
-            print(f"{'':<20} {result['best_val_acc']:>10.2f}% ", end='')
-    print(f"{avg_val_acc:>6.2f}% ± {std_val_acc:>5.2f}%")
+    print(f"(最佳模型依据: {primary_label})")
+
+    def _print_metric_row(label, key, fmt_val):
+        for i, result in enumerate(all_fold_results, 1):
+            v = result[key]
+            if i == 1:
+                print(f"{label:<20} {v:>10.2f}% ", end='')
+            else:
+                print(f"{'':<20} {v:>10.2f}% ", end='')
+        print(f"{fmt_val}")
+
+    if use_acc_primary:
+        _print_metric_row('Best Val Acc (%)', 'best_val_acc',
+                          f"{avg_val_acc:>6.2f}% ± {std_val_acc:>5.2f}%  [主要指标]")
+        _print_metric_row('Best Val mAP (%)', 'best_val_mAP',
+                          f"{avg_val_mAP:>6.2f}% ± {std_val_mAP:>5.2f}%")
+    else:
+        _print_metric_row('Best Val mAP (%)', 'best_val_mAP',
+                          f"{avg_val_mAP:>6.2f}% ± {std_val_mAP:>5.2f}%  [主要指标]")
+        _print_metric_row('Best Val Acc (%)', 'best_val_acc',
+                          f"{avg_val_acc:>6.2f}% ± {std_val_acc:>5.2f}%")
     
     for i, result in enumerate(all_fold_results, 1):
         if i == 1:
@@ -778,16 +810,24 @@ def train_cross_validation(args):
     print(f"\n详细结果:")
     for result in all_fold_results:
         print(f"  Fold {result['fold']}:")
-        print(f"    最佳验证mAP: {result['best_val_mAP']:.2f}% (Epoch {result['best_epoch']}) [主要指标]")
-        print(f"    最佳验证准确率: {result['best_val_acc']:.2f}% (Epoch {result['best_epoch']})")
+        if use_acc_primary:
+            print(f"    最佳验证准确率: {result['best_val_acc']:.2f}% (Epoch {result['best_epoch']}) [主要指标]")
+            print(f"    最佳验证mAP: {result['best_val_mAP']:.2f}% (Epoch {result['best_epoch']})")
+        else:
+            print(f"    最佳验证mAP: {result['best_val_mAP']:.2f}% (Epoch {result['best_epoch']}) [主要指标]")
+            print(f"    最佳验证准确率: {result['best_val_acc']:.2f}% (Epoch {result['best_epoch']})")
         print(f"    mAP: {result['mAP']:.2f}%")
         print(f"    Precision: {result['precision_macro']:.2f}%")
         print(f"    Recall: {result['recall_macro']:.2f}%")
         print(f"    F1 Score: {result['f1_macro']:.2f}%")
     
     print(f"\n平均结果:")
-    print(f"  平均最佳验证mAP: {avg_val_mAP:.2f}% ± {std_val_mAP:.2f}% [主要指标]")
-    print(f"  平均最佳验证准确率: {avg_val_acc:.2f}% ± {std_val_acc:.2f}%")
+    if use_acc_primary:
+        print(f"  平均最佳验证准确率: {avg_val_acc:.2f}% ± {std_val_acc:.2f}% [主要指标]")
+        print(f"  平均最佳验证mAP: {avg_val_mAP:.2f}% ± {std_val_mAP:.2f}%")
+    else:
+        print(f"  平均最佳验证mAP: {avg_val_mAP:.2f}% ± {std_val_mAP:.2f}% [主要指标]")
+        print(f"  平均最佳验证准确率: {avg_val_acc:.2f}% ± {std_val_acc:.2f}%")
     print(f"  平均mAP: {avg_mAP:.2f}% ± {std_mAP:.2f}%")
     print(f"  平均Precision: {avg_precision:.2f}% ± {std_precision:.2f}%")
     print(f"  平均Recall: {avg_recall:.2f}% ± {std_recall:.2f}%")
@@ -795,7 +835,7 @@ def train_cross_validation(args):
     print(f"  平均最终验证准确率: {avg_final_val_acc:.2f}%")
     print(f"  平均最终验证损失: {avg_final_val_loss:.4f}")
     
-    # 保存汇总结果（多分类任务，mAP为主要指标）
+    # 保存汇总结果
     summary = {
         'n_splits': args.n_splits,
         'model': args.model,
@@ -804,7 +844,8 @@ def train_cross_validation(args):
         'loss': args.loss,
         'lr': args.lr,
         'augmentation': args.augmentation,
-        'primary_metric': 'mAP',  # 标记主要指标为mAP
+        'selection_metric': sel,
+        'primary_metric': ('acc' if use_acc_primary else 'mAP'),
         'average_best_val_mAP': float(avg_val_mAP),
         'std_best_val_mAP': float(std_val_mAP),
         'average_best_val_acc': float(avg_val_acc),
@@ -970,7 +1011,9 @@ def train_simple_split(args):
         class_counts=full_dataset.class_counts
     )
     
-    # 保存结果（多分类任务，mAP为主要指标）
+    # 保存结果
+    _sel = getattr(args, 'selection_metric', 'mAP')
+    _acc_pri = _sel == 'acc'
     summary = {
         'mode': 'simple_split',
         'val_ratio': args.val_ratio,
@@ -981,7 +1024,8 @@ def train_simple_split(args):
         'lr': args.lr,
         'augmentation': args.augmentation,
         'use_dynamic_augmentation': args.use_dynamic_augmentation,
-        'primary_metric': 'mAP',  # 标记主要指标为mAP
+        'selection_metric': _sel,
+        'primary_metric': ('acc' if _acc_pri else 'mAP'),
         'best_val_mAP': float(result.get('best_val_mAP', result['mAP'])),
         'best_val_acc': float(result['best_val_acc']),
         'best_epoch': result['best_epoch'],
@@ -1114,11 +1158,15 @@ def main():
     parser.add_argument('--dynamic-aug-high-threshold', type=int, default=300,
                         help='动态增强高阈值：样本数 >= 此值不使用增强（默认300）')
     
+    # 最佳模型与 Early Stopping 所依据的验证指标
+    parser.add_argument('--selection-metric', type=str, default='mAP',
+                        choices=['mAP', 'acc'],
+                        help='保存 best_model 与 EarlyStopping 监控的指标：mAP 或 acc（验证集 top-1 准确率，单位：%% 百分点）')
     # Early Stopping
     parser.add_argument('--early-stopping-patience', type=int, default=20,
-                        help='Early Stopping的patience（默认20，基于val_mAP监控，适用于多分类任务）')
+                        help='Early Stopping 的 patience（默认 20，监控指标与 --selection-metric 一致）')
     parser.add_argument('--early-stopping-min-delta', type=float, default=0.0,
-                        help='Early Stopping的最小改善阈值（mAP提升超过此值才算改进）')
+                        help='判定“有提升”的最小幅度（与所选指标同单位：mAP 或 Acc 的百分点，如 0.1 表示提高 0.1%%）')
     
     # 其他
     parser.add_argument('--num-workers', type=int, default=4,

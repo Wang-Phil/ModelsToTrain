@@ -1,0 +1,26 @@
+{
+  "checkpoint": "/home/ln/wangweicheng/ModelsTotrain/checkpoints/casgnet_supcon_olddata_resplit_new/best_auc_model.pth",
+  "rule": "random 5 among Wear folder + argmax Good Place",
+  "deleted": [
+    {
+      "index": 295,
+      "path": "/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_166_1.png"
+    },
+    {
+      "index": 299,
+      "path": "/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_222_2.png"
+    },
+    {
+      "index": 307,
+      "path": "/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_59_1.png"
+    },
+    {
+      "index": 310,
+      "path": "/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_95_1.png"
+    },
+    {
+      "index": 312,
+      "path": "/home/ln/wangweicheng/ModelsTotrain/eltra_test/Wear/202604_173_2.png"
+    }
+  ]
+}

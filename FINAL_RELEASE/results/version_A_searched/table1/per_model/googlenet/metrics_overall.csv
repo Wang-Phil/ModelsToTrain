@@ -1,0 +1,2 @@
+model,checkpoint,split,group,mode,data_root,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+googlenet,googlenet_ce_only,test,subset217,subset_search,old_data/test,230,0.970(0.958-0.981),0.934(0.879-0.980),0.843(0.736-0.934),0.983(0.976-0.989),0.979(0.971-0.986),0.781(0.680-0.873),0.917(0.900-0.934),0.936(0.914-0.955),0.052999999999999936,-0.0020000000000000018,blocked

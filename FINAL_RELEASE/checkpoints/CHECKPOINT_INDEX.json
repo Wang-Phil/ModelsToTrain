@@ -1,0 +1,230 @@
+{
+  "main_8_models": {
+    "casgnet": {
+      "checkpoint_name": "casgnet_s1_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/casgnet/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/casgnet/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/casgnet_s1_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/casgnet_s1_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.962,
+      "table2_auc": 0.944
+    },
+    "starnet": {
+      "checkpoint_name": "starnet_s1_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/starnet/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/starnet/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/starnet_s1_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/starnet_s1_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.952,
+      "table2_auc": 0.935
+    },
+    "densenet121": {
+      "checkpoint_name": "densenet121_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/densenet121/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/densenet121/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/densenet121_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/densenet121_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.957,
+      "table2_auc": 0.933
+    },
+    "resnet18": {
+      "checkpoint_name": "resnet18_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/resnet18/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/resnet18/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/resnet18_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/resnet18_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.951,
+      "table2_auc": 0.934
+    },
+    "resnet50": {
+      "checkpoint_name": "resnet50_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/resnet50/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/resnet50/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/resnet50_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/resnet50_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.917,
+      "table2_auc": 0.922
+    },
+    "mobilenetv4_m": {
+      "checkpoint_name": "mobilenetv4_m_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/mobilenetv4_m/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/mobilenetv4_m/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/mobilenetv4_m_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/mobilenetv4_m_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.918,
+      "table2_auc": 0.936
+    },
+    "googlenet": {
+      "checkpoint_name": "googlenet_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/googlenet/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/googlenet/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/googlenet_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/googlenet_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.903,
+      "table2_auc": 0.929
+    },
+    "lsnet_b": {
+      "checkpoint_name": "lsnet_b_ce_only",
+      "table1_ckpt_dir": "checkpoints/main_8_models/lsnet_b/table1_v2",
+      "table2_ckpt_dir": "checkpoints/main_8_models/lsnet_b/table2_v3",
+      "source_table1": "checkpoints/old_data_supcon_compare_v2/lsnet_b_ce_only",
+      "source_table2": "checkpoints/old_data_supcon_compare_v3/lsnet_b_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc": 0.953,
+      "table2_auc": 0.922
+    }
+  },
+  "ablation_8_variants": {
+    "starnet_baseline_ab000": {
+      "ab_code": "ab000",
+      "modules": {
+        "SA": false,
+        "GRN": false,
+        "SK-UNIT": false
+      },
+      "checkpoint_name": "casgnet_s1_ab000_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab000_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.952
+    },
+    "casgnet_only_skunit_ab001": {
+      "ab_code": "ab001",
+      "modules": {
+        "SA": false,
+        "GRN": false,
+        "SK-UNIT": true
+      },
+      "checkpoint_name": "casgnet_s1_ab001_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab001_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.96
+    },
+    "casgnet_only_grn_ab010": {
+      "ab_code": "ab010",
+      "modules": {
+        "SA": false,
+        "GRN": true,
+        "SK-UNIT": false
+      },
+      "checkpoint_name": "casgnet_s1_ab010_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab010_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.95
+    },
+    "casgnet_no_sa_ab011": {
+      "ab_code": "ab011",
+      "modules": {
+        "SA": false,
+        "GRN": true,
+        "SK-UNIT": true
+      },
+      "checkpoint_name": "casgnet_s1_ab011_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab011_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.954
+    },
+    "casgnet_only_sa_ab100": {
+      "ab_code": "ab100",
+      "modules": {
+        "SA": true,
+        "GRN": false,
+        "SK-UNIT": false
+      },
+      "checkpoint_name": "casgnet_s1_ab100_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab100_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.941
+    },
+    "casgnet_no_grn_ab101": {
+      "ab_code": "ab101",
+      "modules": {
+        "SA": true,
+        "GRN": false,
+        "SK-UNIT": true
+      },
+      "checkpoint_name": "casgnet_s1_ab101_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab101_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.951
+    },
+    "casgnet_no_skunit_ab110": {
+      "ab_code": "ab110",
+      "modules": {
+        "SA": true,
+        "GRN": true,
+        "SK-UNIT": false
+      },
+      "checkpoint_name": "casgnet_s1_ab110_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab110_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.953
+    },
+    "casgnet_full_ab111": {
+      "ab_code": "ab111",
+      "modules": {
+        "SA": true,
+        "GRN": true,
+        "SK-UNIT": true
+      },
+      "checkpoint_name": "casgnet_s1_ab111_ce_only",
+      "source": "checkpoints/starnetsk_sk_kernel_ablation/casgnet_s1_ab111_ce_only",
+      "files": [
+        "best_auc_model.pth",
+        "history.json"
+      ],
+      "table1_auc_original_split": 0.962
+    }
+  }
+}

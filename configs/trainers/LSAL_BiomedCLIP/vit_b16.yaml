@@ -1,0 +1,36 @@
+TRAINER:
+  NAME: LSAL_BiomedCLIP
+  LSAL:
+    PREC: "amp"  # 训练精度: fp16, fp32, amp
+    SEMANTICS_DIR: "../semantics"  # 语义文件目录（相对于Dassl.pytorch目录）
+    LAMBDA_ANCHOR: 0.5  # Semantic Anchor Loss的权重系数
+
+MODEL:
+  BACKBONE:
+    NAME: "vit_base_patch16_224"  # BiomedCLIP 使用 ViT-B/16
+  INIT_WEIGHTS: ""  # 预训练权重路径（可选）
+
+DATASET:
+  NAME: "ImageFolder"  # 数据集名称
+  ROOT: "single_label_data"  # 数据集根目录（按类别组织的文件夹）
+  NUM_SHOTS: -1  # 每个类别的样本数（-1表示使用所有数据）
+
+INPUT:
+  SIZE: [224, 224]  # 输入图像大小
+
+OPTIM:
+  NAME: "adamw"  # 优化器名称: sgd, adam, adamw
+  LR: 0.002  # 学习率
+  MAX_EPOCH: 100  # 最大训练轮数
+  WEIGHT_DECAY: 0.0001  # 权重衰减
+  MOMENTUM: 0.9  # SGD动量（如果使用SGD）
+  LR_SCHEDULER: "cosine"  # 学习率调度器: single_step, multi_step, cosine
+  STEPSIZE: (-1,)  # 学习率衰减步长（-1表示在MAX_EPOCH时衰减）
+  GAMMA: 0.1  # 学习率衰减因子
+
+OUTPUT_DIR: "output/lsal_biomedclip"  # 输出目录
+
+SEED: 42  # 随机种子
+
+USE_CUDA: True  # 是否使用CUDA
+

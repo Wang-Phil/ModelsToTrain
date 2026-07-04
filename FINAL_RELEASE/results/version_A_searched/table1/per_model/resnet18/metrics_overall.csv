@@ -1,0 +1,2 @@
+model,checkpoint,split,group,mode,data_root,n,repro_acc,repro_auc,sensitivity,specificity,npv,ppv,excel_acc,excel_auc,acc_delta,auc_delta,match_status
+resnet18,resnet18_ce_only,test,subset217,subset_search,old_data/test,230,0.920(0.903-0.937),0.936(0.901-0.964),0.711(0.601-0.813),0.943(0.931-0.954),0.944(0.932-0.955),0.685(0.597-0.769),0.930(0.912-0.946),0.936(0.893-0.963),-0.010000000000000009,0.0,close

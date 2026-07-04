@@ -1,0 +1,68 @@
+{
+  "excel_file": "整体实验结果_优化排版.xlsx",
+  "sheets": {
+    "测试集结果": "table1_test — v2 checkpoints, old_data/test subset n=217",
+    "独立测试集结果": "table2_val — v3 checkpoints, old_data/val n=207",
+    "测试集每个类别效果": "per-class on table1 split",
+    "独立测试集每个类别效果": "per-class on table2 split",
+    "消融实验": "CASGNet module ablation (starnetsk_sk_kernel_ablation)"
+  },
+  "models": [
+    {
+      "excel_name": "casgnet",
+      "checkpoint_name": "casgnet_s1_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/casgnet_s1_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/casgnet_s1_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "mobilenetv4_m",
+      "checkpoint_name": "mobilenetv4_m_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/mobilenetv4_m_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/mobilenetv4_m_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "starnet_s1",
+      "checkpoint_name": "starnet_s1_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/starnet_s1_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/starnet_s1_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "densenet121",
+      "checkpoint_name": "densenet121_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/densenet121_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/densenet121_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "resnet18",
+      "checkpoint_name": "resnet18_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/resnet18_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/resnet18_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "googlenet",
+      "checkpoint_name": "googlenet_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/googlenet_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/googlenet_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "resnet50",
+      "checkpoint_name": "resnet50_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/resnet50_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/resnet50_ce_only/best_auc_model.pth"
+    },
+    {
+      "excel_name": "lsnet_b",
+      "checkpoint_name": "lsnet_b_ce_only",
+      "test_ckpt": "checkpoints/old_data_supcon_compare_v2/lsnet_b_ce_only/best_auc_model.pth",
+      "val_ckpt": "checkpoints/old_data_supcon_compare_v3/lsnet_b_ce_only/best_auc_model.pth"
+    }
+  ],
+  "evaluation_settings": {
+    "preprocessing": "legacy_val_resize (Resize 224x224)",
+    "bootstrap_n": 1000,
+    "bootstrap_seed": 42,
+    "test_manifest": "checkpoints/old_data_supcon_compare_v2/test_subset_ranked_cas_first_manifest.json",
+    "test_data": "old_data/test (subset 217/258)",
+    "val_data": "old_data/val (207)"
+  }
+}

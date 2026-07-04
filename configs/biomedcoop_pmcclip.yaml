@@ -1,0 +1,40 @@
+TRAINER:
+  NAME: BiomedCoOp_PMCCLIP
+  BIOMEDCOOP:
+    N_CTX: 4  # 上下文token数量
+    CTX_INIT: "a photo of a"  # 上下文初始化文本
+    CSC: False  # 是否使用类别特定的上下文
+    CLASS_TOKEN_POSITION: "end"  # 类别token位置: end, middle, front
+    SCCM_LAMBDA: 1.0  # SCCM损失权重
+    KDSP_LAMBDA: 1.0  # KDSP损失权重
+    TAU: 1.0  # 用于选择prompt的阈值
+    N_PROMPTS: 4  # 使用的prompt数量
+    PREC: "amp"  # 训练精度: fp16, fp32, amp
+
+MODEL:
+  BACKBONE:
+    NAME: "resnet50"  # PMC-CLIP 使用 ResNet50
+  INIT_WEIGHTS: ""  # 预训练权重路径（可选）
+
+DATASET:
+  NAME: "ImageFolder"  # 数据集名称
+  ROOT: "single_label_data"  # 数据集根目录（按类别组织的文件夹）
+  NUM_SHOTS: -1  # 每个类别的样本数（-1表示使用所有数据）
+
+INPUT:
+  SIZE: [224, 224]  # 输入图像大小
+
+OPTIM:
+  NAME: "sgd"  # 优化器名称: sgd, adam, adamw
+  LR: 0.002  # 学习率
+  MAX_EPOCH: 100  # 最大训练轮数
+  WEIGHT_DECAY: 0.0001  # 权重衰减
+  MOMENTUM: 0.9  # SGD动量（如果使用SGD）
+  SCHEDULER: "cosine"  # 学习率调度器: cosine, multistep
+
+OUTPUT_DIR: "output/biomedcoop_pmcclip"  # 输出目录
+
+SEED: 42  # 随机种子
+
+USE_CUDA: True  # 是否使用CUDA
+

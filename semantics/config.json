@@ -1,0 +1,16 @@
+{
+  "num_classes": 9,
+  "tau": 0.1,
+  "model_name": "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224",
+  "classnames": [
+    "Acetabular Loosening",
+    "Dislocation",
+    "Fracture",
+    "Good Place",
+    "Infection",
+    "Native Hip",
+    "Spacer",
+    "Stem Loosening",
+    "Wear"
+  ]
+}

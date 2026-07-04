@@ -1,0 +1,2 @@
+model,checkpoint,split,n_samples,class_counts,auc,sensitivity,specificity,npv,ppv,acc
+mobilenetv4_m,mobilenetv4_m_ce_only,val,207,"{""0"": 59, ""1"": 10, ""2"": 30, ""3"": 68, ""4"": 12, ""5"": 19, ""6"": 9}",0.936(0.914-0.956),0.605(0.530-0.680),0.940(0.928-0.951),0.945(0.933-0.956),0.838(0.780-0.884),0.916(0.898-0.932)
