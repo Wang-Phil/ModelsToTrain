@@ -155,9 +155,22 @@ evaluation_results/**/per_model/
 evaluation_results/**/training_curves/
 evaluation_results/**/ablation/
 
+# Allow Python scripts inside ignored artifact dirs
+!evaluation_results/**/training_curves/
+!evaluation_results/**/training_curves/**
+!evaluation_results/**/training_curves/**/*.py
+!evaluation_results/**/PUBLICATION_PACKAGE/
+!evaluation_results/**/PUBLICATION_PACKAGE/**
+!evaluation_results/**/PUBLICATION_PACKAGE/**/*.py
+
 FINAL_RELEASE.tar.gz
 *.pth.tar*
 *.pth.tar-*
 
 # PUBLICATION_PACKAGE lives under evaluation_results; use FINAL_RELEASE only
 PUBLICATION_PACKAGE/
+
+# Allow Python scripts under evaluation_results/PUBLICATION_PACKAGE (overrides rule above)
+!evaluation_results/**/PUBLICATION_PACKAGE/
+!evaluation_results/**/PUBLICATION_PACKAGE/**
+!evaluation_results/**/PUBLICATION_PACKAGE/**/*.py
